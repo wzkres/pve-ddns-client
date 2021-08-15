@@ -1,0 +1,19 @@
+host:
+  dns: porkbun
+  api-key: 123
+  api-secret: 456
+  ipv4: ["xxx.xxx.xxx", "aaa.xxx.xxx"]
+  ipv6: ["aaa.bbb.ccc", "ddd.eee.fff"]
+guests:
+  - vmid: 100
+    dns: porkbun
+    api-key: 123
+    api-secret: 456
+    ipv4: ["xxx.xxx.xxx", "aaa.xxx.xxx"]
+    ipv6: ["aaa.bbb.ccc", "ddd.eee.fff"]
+  - vmid: 200
+    dns: porkbun
+    api-key: 123
+    api-secret: 456
+    ipv4: ["xxx.xxx.xxx", "aaa.xxx.xxx"]
+    ipv6: ["aaa.bbb.ccc", "ddd.eee.fff"]
