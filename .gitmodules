@@ -1,0 +1,9 @@
+[submodule "3rdparty/glog"]
+	path = 3rdparty/glog
+	url = https://github.com/google/glog.git
+[submodule "3rdparty/yaml-cpp"]
+	path = 3rdparty/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "3rdparty/cmdline"]
+	path = 3rdparty/cmdline
+	url = https://github.com/MihailJP/cmdline.git
