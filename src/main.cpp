@@ -101,6 +101,7 @@ static bool load_conf(const std::string & conf_yaml)
     return conf_valid;
 }
 
+// main
 int main(int argc, char * argv[])
 {
     google::InitGoogleLogging(argv[0]);
