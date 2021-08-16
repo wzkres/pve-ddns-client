@@ -45,5 +45,5 @@ jobs:
         name: ubuntu-artifact
         path: |
           ${{github.workspace}}/build/pve-ddns-client
-          ${{github.workspace}}/build/*.so
+          ${{github.workspace}}/build/lib*.so*
           ${{github.workspace}}/build/*.yml
