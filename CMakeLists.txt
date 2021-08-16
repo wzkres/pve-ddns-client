@@ -19,12 +19,12 @@ add_executable(pve-ddns-client ${SOURCES})
 target_include_directories(pve-ddns-client PRIVATE "3rdparty/cmdline")
 target_link_libraries(pve-ddns-client PRIVATE glog::glog yaml-cpp)
 
-add_custom_command(
-    TARGET pve-ddns-client
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:glog> ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Copy glog lib to ${CMAKE_CURRENT_BINARY_DIR} directory" VERBATIM
-)
+#add_custom_command(
+#    TARGET pve-ddns-client
+#    POST_BUILD
+#    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:glog> ${CMAKE_CURRENT_BINARY_DIR}
+#    COMMENT "Copy glog lib to ${CMAKE_CURRENT_BINARY_DIR} directory" VERBATIM
+#)
 
 add_custom_command(
         TARGET pve-ddns-client
