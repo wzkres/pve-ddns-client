@@ -7,3 +7,9 @@
 [submodule "3rdparty/cmdline"]
 	path = 3rdparty/cmdline
 	url = https://github.com/MihailJP/cmdline.git
+[submodule "3rdparty/curl"]
+	path = 3rdparty/curl
+	url = https://github.com/curl/curl.git
+[submodule "3rdparty/openssl"]
+	path = 3rdparty/openssl
+	url = https://github.com/openssl/openssl.git

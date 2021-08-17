@@ -14,3 +14,4 @@ _deps
 build
 cmake-build-*
 .idea
+.DS_Store
