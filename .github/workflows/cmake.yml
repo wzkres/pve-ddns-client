@@ -28,7 +28,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${GITHUB_WORKSPACE}/3rdparty/prebuilt
-        key: ${{ runner.os }}-build-${{ hashFiles('${GITHUB_WORKSPACE}/3rdparty/build.sh') }}
+        key: ${{ runner.os }}-build-${{ hashFiles('3rdparty/build.sh') }}
     
     - name: Prebuild 3rdparty libs
       run: |
