@@ -11,20 +11,10 @@ add_definitions(-DHAVE_SNPRINTF)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.cc")
 
-add_subdirectory(3rdparty/glog)
-add_subdirectory(3rdparty/yaml-cpp)
-
 add_executable(pve-ddns-client ${SOURCES})
 
-target_include_directories(pve-ddns-client PRIVATE "3rdparty/cmdline")
-target_link_libraries(pve-ddns-client PRIVATE glog::glog yaml-cpp)
-
-#add_custom_command(
-#    TARGET pve-ddns-client
-#    POST_BUILD
-#    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:glog> ${CMAKE_CURRENT_BINARY_DIR}
-#    COMMENT "Copy glog lib to ${CMAKE_CURRENT_BINARY_DIR} directory" VERBATIM
-#)
+target_include_directories(pve-ddns-client PRIVATE "3rdparty/cmdline" "3rdparty/prebuilt/include")
+target_link_libraries(pve-ddns-client PRIVATE glog yaml-cpp)
 
 add_custom_command(
         TARGET pve-ddns-client
