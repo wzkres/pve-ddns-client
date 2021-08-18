@@ -30,7 +30,7 @@ cd ${script_path}/glog
 rm -rf cmake_build
 mkdir cmake_build
 cd cmake_build
-cmake -DBUILD_SHARED_LIBS=NO -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=${script_path}/prebuilt ../
+cmake -DWITH_GFLAGS=NO -DBUILD_SHARED_LIBS=NO -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=${script_path}/prebuilt ../
 make -j4
 make install
 make clean
