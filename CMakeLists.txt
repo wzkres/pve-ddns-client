@@ -14,6 +14,7 @@ file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.cc")
 add_executable(pve-ddns-client ${SOURCES})
 
 target_include_directories(pve-ddns-client PRIVATE "3rdparty/cmdline" "3rdparty/prebuilt/include")
+target_link_directories(pve-ddns-client PRIVATE "3rdparty/prebuilt/lib" "3rdparty/prebuilt/lib64")
 target_link_libraries(pve-ddns-client PRIVATE glog yaml-cpp)
 
 add_custom_command(
