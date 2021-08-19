@@ -23,6 +23,8 @@ cmake -DBUILD_SHARED_LIBS=NO -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:P
 make -j4
 make install
 make clean
+cd ..
+rm -rf cmake_build
 echo "curl built!"
 
 echo "Building glog..."
@@ -34,6 +36,8 @@ cmake -DWITH_GFLAGS=NO -DBUILD_SHARED_LIBS=NO -DCMAKE_BUILD_TYPE=Release -DCMAKE
 make -j4
 make install
 make clean
+cd ..
+rm -rf cmake_build
 echo "glog built!"
 
 echo "Building yaml-cpp..."
@@ -45,4 +49,8 @@ cmake -DBUILD_SHARED_LIBS=NO -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:P
 make -j4
 make install
 make clean
+cd ..
+rm -rf cmake_build
 echo "yaml-cpp built!"
+
+echo "All 3rdparty libs built!"
