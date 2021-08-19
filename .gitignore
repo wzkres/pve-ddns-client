@@ -13,5 +13,7 @@ _deps
 # CMake output
 build
 cmake-build-*
+/3rdparty/prebuilt
+
 .idea
 .DS_Store
