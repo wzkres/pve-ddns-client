@@ -1,24 +1,7 @@
-#include <vector>
-#include <unordered_map>
-
 #include "glog/logging.h"
 #include "cmdline.h"
-#include "yaml-cpp/yaml.h"
 
-typedef struct _config_node
-{
-    std::string dns_type;
-    std::string api_key;
-    std::string api_secret;
-    std::vector<std::string> ipv4_domains;
-    std::vector<std::string> ipv6_domains;
-} config_node;
-
-typedef struct _pve_ddns_config
-{
-    config_node host_node;
-    std::unordered_map<int, config_node> guest_nodes;
-} pve_ddns_config;
+#include "config.h"
 
 static bool parse_cmd(int argc, char * argv[], std::string & out_conf_yml)
 {
@@ -80,27 +63,6 @@ static bool parse_cmd(int argc, char * argv[], std::string & out_conf_yml)
     return ret;
 }
 
-static bool load_conf(const std::string & conf_yaml)
-{
-    bool conf_valid = false;
-    try
-    {
-        YAML::Node conf = YAML::LoadFile(conf_yaml);
-        if (conf["host"])
-        {
-            LOG(INFO) << "Found host conf!";
-            const auto & host_conf = conf["host"];
-        }
-        conf_valid = true;
-    }
-    catch (...)
-    {
-        LOG(ERROR) << "Failed to load config yaml file '" << conf_yaml << "'!";
-    }
-
-    return conf_valid;
-}
-
 // main
 int main(int argc, char * argv[])
 {
@@ -112,11 +74,10 @@ int main(int argc, char * argv[])
         return EXIT_SUCCESS;
 
     LOG(INFO) << "Starting up, loading config yaml from '" << conf_yaml << "'...";
-    const bool conf_valid = load_conf(conf_yaml);
-    if (conf_valid)
-    {
+    Config & cfg = Config::getInstance();
+    const bool cfg_valid = cfg.loadConfig(conf_yaml);
+    if (cfg_valid)
         LOG(INFO) << "Config loaded!";
-    }
 
     LOG(INFO) << "Shutting down...";
     google::ShutdownGoogleLogging();
