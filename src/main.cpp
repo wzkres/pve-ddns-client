@@ -1,8 +1,11 @@
 #include "glog/logging.h"
+#define CURL_STATICLIB
+#include "curl/curl.h"
 #include "cmdline.h"
 
 #include "config.h"
 
+// Command line params handling
 static bool parse_cmd(int argc, char * argv[], std::string & out_conf_yml)
 {
     if (argc < 1 || nullptr == argv || nullptr == argv[0])
@@ -68,8 +71,9 @@ int main(int argc, char * argv[])
 {
     google::InitGoogleLogging(argv[0]);
     FLAGS_alsologtostderr = 1;
-    std::string conf_yaml;
+    curl_global_init(CURL_GLOBAL_ALL);
 
+    std::string conf_yaml;
     if (!parse_cmd(argc, argv, conf_yaml))
         return EXIT_SUCCESS;
 
@@ -80,6 +84,7 @@ int main(int argc, char * argv[])
         LOG(INFO) << "Config loaded!";
 
     LOG(INFO) << "Shutting down...";
+    curl_global_cleanup();
     google::ShutdownGoogleLogging();
     return EXIT_SUCCESS;
 }
