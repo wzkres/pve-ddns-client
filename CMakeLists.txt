@@ -8,6 +8,7 @@ message("CMake version: " ${CMAKE_VERSION})
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_definitions(-DCURL_STATICLIB)
 #add_definitions(-DHAVE_SNPRINTF)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.cc")
@@ -16,7 +17,8 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE "3rdparty/cmdline" "3rdparty/prebuilt/include")
 target_link_directories(${PROJECT_NAME} PRIVATE "3rdparty/prebuilt/lib" "3rdparty/prebuilt/lib64")
-target_link_libraries(${PROJECT_NAME} PRIVATE pthread glog crypto ssl curl yaml-cpp)
+target_link_libraries(curl PRIVATE crypto ssl)
+target_link_libraries(${PROJECT_NAME} PRIVATE pthread glog curl yaml-cpp)
 #target_link_libraries(${PROJECT_NAME} PRIVATE glogd yaml-cppd libcurl-d wldap32 crypt32 Ws2_32)
 
 add_custom_command(
