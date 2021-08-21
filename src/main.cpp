@@ -1,8 +1,11 @@
+#include <memory>
+
 #include "glog/logging.h"
 #include "curl/curl.h"
 #include "cmdline.h"
 
 #include "config.h"
+#include "pve_api_client.h"
 
 // Command line params handling
 static bool parse_cmd(int argc, char * argv[], std::string & out_conf_yml)
@@ -81,6 +84,9 @@ int main(int argc, char * argv[])
     const bool cfg_valid = cfg.loadConfig(conf_yaml);
     if (cfg_valid)
         LOG(INFO) << "Config loaded!";
+
+    std::shared_ptr<PveApiClient> pve_api_client = std::make_shared<PveApiClient>();
+    pve_api_client->init("", "");
 
     LOG(INFO) << "Shutting down...";
     curl_global_cleanup();
