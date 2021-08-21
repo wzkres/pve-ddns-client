@@ -3,7 +3,38 @@
 #include "glog/logging.h"
 #include "yaml-cpp/yaml.h"
 
-static void fill_config_node(const YAML::Node & yaml_node, config_node & cfg_node)
+// Parse general config from yaml node
+static void parse_general_config(const YAML::Node & yaml_node, Config & config)
+{
+    if (yaml_node["log-overdue-days"])
+        config.log_overdue_days = yaml_node["log-overdue-days"].as<int>();
+    if (yaml_node["pve-api"])
+    {
+        const auto & pa = yaml_node["pve-api"];
+        if (pa["host"])
+        {
+            config._pve_api_host = pa["host"].as<std::string>();
+            // Append trailing slash if needed
+            if (config._pve_api_host[config._pve_api_host.length() - 1] != '/')
+                config._pve_api_host.append("/");
+        }
+        if (pa["node"])
+            config._pve_api_node = pa["node"].as<std::string>();
+        if (pa["iface"])
+            config._pve_api_iface = pa["iface"].as<std::string>();
+        if (pa["user"])
+            config._pve_api_user = pa["user"].as<std::string>();
+        if (pa["realm"])
+            config._pve_api_realm = pa["realm"].as<std::string>();
+        if (pa["token-id"])
+            config._pve_api_token_id = pa["token-id"].as<std::string>();
+        if (pa["token-uuid"])
+            config._pve_api_token_uuid = pa["token-uuid"].as<std::string>();
+    }
+}
+
+// Parse ddns config from yaml node
+static void parse_ddns_config(const YAML::Node & yaml_node, config_node & cfg_node)
 {
     if (yaml_node["dns"])
         cfg_node.dns_type = yaml_node["dns"].as<std::string>();
@@ -34,11 +65,22 @@ bool Config::loadConfig(const std::string & config_file)
         // Reset current loaded configs first
         _host_config = {};
         _guest_configs.clear();
+        // Mandatory general node
+        if (conf["general"])
+        {
+            LOG(INFO) << "Found general conf!";
+            parse_general_config(conf["general"], *this);
+        }
+        else
+        {
+            LOG(WARNING) << "General config not found!";
+            return conf_valid;
+        }
         // Load host config if specified
         if (conf["host"])
         {
             LOG(INFO) << "Found host conf!";
-            fill_config_node(conf["host"], _host_config);
+            parse_ddns_config(conf["host"], _host_config);
             LOG(INFO) << "Host conf loaded, " << _host_config.ipv4_domains.size() << " ipv4 domain(s), "
                 << _host_config.ipv6_domains.size() << " ipv6 domain(s)!";
         }
@@ -53,7 +95,7 @@ bool Config::loadConfig(const std::string & config_file)
                 if (guest_node["vmid"])
                 {
                     config_node temp = {};
-                    fill_config_node(guest_node, temp);
+                    parse_ddns_config(guest_node, temp);
                     _guest_configs.emplace(guest_node["vmid"].as<int>(), temp);
                 }
             }

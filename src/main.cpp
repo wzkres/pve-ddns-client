@@ -8,7 +8,7 @@
 #include "pve_api_client.h"
 
 // Command line params handling
-static bool parse_cmd(int argc, char * argv[], std::string & out_conf_yml)
+static bool parse_cmd(int argc, char * argv[])
 {
     if (argc < 1 || nullptr == argv || nullptr == argv[0])
     {
@@ -20,6 +20,7 @@ static bool parse_cmd(int argc, char * argv[], std::string & out_conf_yml)
     p.add("version", 'v', "Print version");
     p.add("help", 'h', "Show usage");
     p.add<std::string>("config", 'c', "Config yaml file to load", false, "./pve-ddns-client.yml");
+    p.add<std::string>("log", 'l', "Log file path", false, "./");
 
     const auto show_usage = [&p]()
     {
@@ -45,8 +46,13 @@ static bool parse_cmd(int argc, char * argv[], std::string & out_conf_yml)
             bool args_valid = false;
             do
             {
-                out_conf_yml = p.get<std::string>("config");
-                if (out_conf_yml.empty()) break;
+                auto & config = Config::getInstance();
+
+                config.yml_path = p.get<std::string>("config");
+                if (config.yml_path.empty()) break;
+
+                config.log_path = p.get<std::string>("log");
+                if (config.log_path.empty()) break;
 
                 args_valid = true;
             } while (false);
@@ -71,22 +77,33 @@ static bool parse_cmd(int argc, char * argv[], std::string & out_conf_yml)
 // main
 int main(int argc, char * argv[])
 {
-    google::InitGoogleLogging(argv[0]);
-    FLAGS_alsologtostderr = 1;
-    curl_global_init(CURL_GLOBAL_ALL);
-
-    std::string conf_yaml;
-    if (!parse_cmd(argc, argv, conf_yaml))
+    if (!parse_cmd(argc, argv))
         return EXIT_SUCCESS;
 
-    LOG(INFO) << "Starting up, loading config yaml from '" << conf_yaml << "'...";
     Config & cfg = Config::getInstance();
-    const bool cfg_valid = cfg.loadConfig(conf_yaml);
-    if (cfg_valid)
-        LOG(INFO) << "Config loaded!";
 
-    std::shared_ptr<PveApiClient> pve_api_client = std::make_shared<PveApiClient>();
-    pve_api_client->init("", "");
+    FLAGS_log_dir = cfg.log_path;
+    FLAGS_alsologtostderr = true;
+    google::InitGoogleLogging(argv[0]);
+    google::InstallFailureSignalHandler();
+
+    curl_global_init(CURL_GLOBAL_ALL);
+
+    LOG(INFO) << "Starting up, loading config from '" << cfg.yml_path << "'...";
+
+    const bool cfg_valid = cfg.loadConfig(cfg.yml_path);
+    if (cfg_valid)
+    {
+        LOG(INFO) << "Config loaded!";
+        google::EnableLogCleaner(cfg.log_overdue_days);
+        std::shared_ptr<PveApiClient> pve_api_client = std::make_shared<PveApiClient>();
+        if (pve_api_client->init())
+            LOG(INFO) << "PVE API client inited!";
+        else
+            LOG(WARNING) << "PVE API client failed to init!";
+    }
+    else
+        LOG(WARNING) << "Failed to load config from '" << cfg.yml_path << "'!";
 
     LOG(INFO) << "Shutting down...";
     curl_global_cleanup();

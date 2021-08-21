@@ -9,10 +9,11 @@ public:
     PveApiClient() = default;
     ~PveApiClient() = default;
 
-    bool init(std::string api_host, std::string api_token);
+    // Init using infos from global config
+    bool init();
 
 protected:
-    bool req(const std::string & api_url, const std::string & req_data, int & resp_code, std::string & resp_data);
+    bool req(const std::string & api_url, const std::string & req_data, int & resp_code, std::string & resp_data) const;
 
 private:
     // PVE API host (root url)

@@ -30,7 +30,24 @@ public:
         return instance;
     }
 
+    // Load config yaml
     bool loadConfig(const std::string & config_file);
+
+    // Config yaml file path
+    std::string yml_path;
+    // Log file saving path
+    std::string log_path;
+
+    // Log cleaner keep days
+    int log_overdue_days = 3;
+    // PVE API related stuff
+    std::string _pve_api_host;
+    std::string _pve_api_node;
+    std::string _pve_api_iface;
+    std::string _pve_api_user;
+    std::string _pve_api_realm;
+    std::string _pve_api_token_id;
+    std::string _pve_api_token_uuid;
 
     // Host config
     config_node _host_config;

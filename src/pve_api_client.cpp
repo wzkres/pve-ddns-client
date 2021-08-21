@@ -2,6 +2,21 @@
 
 #include "glog/logging.h"
 #include "curl/curl.h"
+#include "fmt/format.h"
+
+#include "config.h"
+
+static const char * API_VERSION = "api2/json/version";
+static const char * API_HOST_NETWORK = "api2/json/nodes/{}/network/{}";
+
+static std::string get_pve_api_http_auth_header()
+{
+    const auto & config = Config::getInstance();
+//    Authorization: PVEAPIToken=USER@REALM!TOKENID=UUID
+    return fmt::format("Authorization: PVEAPIToken={}@{}!{}={}",
+                       config._pve_api_user, config._pve_api_realm,
+                       config._pve_api_token_id, config._pve_api_token_uuid);
+}
 
 static size_t write_string_callback(const void * ptr, size_t size, size_t n, void * s)
 {
@@ -22,17 +37,20 @@ static size_t write_string_callback(const void * ptr, size_t size, size_t n, voi
     return n;
 }
 
-bool PveApiClient::init(std::string api_host, std::string api_token)
+bool PveApiClient::init()
 {
+    const auto & config = Config::getInstance();
+
     int resp_code;
     std::string resp_data;
-    req("https://pve:8006/api2/json//nodes/xhpve/network/vmbr0", "", resp_code, resp_data);
+    const bool ret = req(fmt::format("{}{}", config._pve_api_host, API_VERSION), "", resp_code, resp_data);
     LOG(INFO) << resp_data;
-    return true;
+
+    return ret;
 }
 
 bool PveApiClient::req(const std::string & api_url, const std::string & req_data,
-                       int & resp_code, std::string & resp_data)
+                       int & resp_code, std::string & resp_data) const
 {
     CURL * curl = curl_easy_init();
     if (nullptr == curl)
@@ -59,14 +77,12 @@ bool PveApiClient::req(const std::string & api_url, const std::string & req_data
 #ifndef NDEBUG
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 #endif
-//        Authorization: PVEAPIToken=USER@REALM!TOKENID=UUID
-        curl_slist * plist = curl_slist_append(
-            nullptr, "Authorization: PVEAPIToken=root@pam!ddns=111"
-        );
-//        plist = curl_slist_append(plist, "Accept: application/json");
-//        plist = curl_slist_append(plist, "Content-Type: application/json");
-//        plist = curl_slist_append(plist, "charset: utf-8");
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, plist);
+
+        curl_slist * http_headers = curl_slist_append(nullptr, get_pve_api_http_auth_header().c_str());
+//        http_headers = curl_slist_append(http_headers, "Accept: application/json");
+//        http_headers = curl_slist_append(http_headers, "Content-Type: application/json");
+//        http_headers = curl_slist_append(http_headers, "charset: utf-8");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, http_headers);
         CURLcode curl_ret = curl_easy_perform(curl);
         if (curl_ret != CURLcode::CURLE_OK)
         {
@@ -77,10 +93,10 @@ bool PveApiClient::req(const std::string & api_url, const std::string & req_data
         ret = true;
 
         long code = 0;
-        curl_ret = curl_easy_getinfo(curl, CURLINFO::CURLINFO_RESPONSE_CODE, code);
+        curl_ret = curl_easy_getinfo(curl, CURLINFO::CURLINFO_RESPONSE_CODE, &code);
         if (CURLcode::CURLE_OK != curl_ret)
         {
-            LOG(WARNING) << "curl_easy_getinfo fail, curl_code is '" << curl_ret << "'!";
+            LOG(WARNING) << "curl_easy_getinfo fail, curl_code is '" << curl_ret << "', error is '" << errbuf << "'!";
             break;
         }
         resp_code = static_cast<int>(code);

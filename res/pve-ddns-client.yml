@@ -1,3 +1,13 @@
+general:
+  log-overdue-days: 3
+  pve-api:
+    host: https://host.pve.com:8006
+    node: pvenode
+    iface: vmbr0
+    user: root
+    realm: pam
+    token-id: ddns
+    token-uuid: uuid
 host:
   dns: porkbun
   api-key: 123
