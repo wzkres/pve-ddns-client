@@ -17,8 +17,8 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE "3rdparty/cmdline" "3rdparty/prebuilt/include")
 target_link_directories(${PROJECT_NAME} PRIVATE "3rdparty/prebuilt/lib" "3rdparty/prebuilt/lib64")
-target_link_libraries(${PROJECT_NAME} PRIVATE curl glog ssl crypto yaml-cpp pthread dl)
-#target_link_libraries(${PROJECT_NAME} PRIVATE glogd yaml-cppd libcurl-d wldap32 crypt32 Ws2_32)
+target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto z pthread dl)
+#target_link_libraries(${PROJECT_NAME} PRIVATE libcurl-d glogd yaml-cppd wldap32 crypt32 Ws2_32)
 
 add_custom_command(
         TARGET ${PROJECT_NAME}

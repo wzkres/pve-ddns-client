@@ -10,7 +10,7 @@ echo "Building openssl..."
 cd ${script_path}/openssl
 ./config no-shared --prefix=${script_path}/prebuilt --openssldir=${script_path}/prebuilt
 make -j4
-make install
+make install_sw
 make clean
 echo "openssl built!"
 
