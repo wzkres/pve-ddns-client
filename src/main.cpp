@@ -84,6 +84,11 @@ int main(int argc, char * argv[])
 
     FLAGS_log_dir = cfg.log_path;
     FLAGS_alsologtostderr = true;
+    google::SetLogFilenameExtension(".log");
+    // Only one log file
+    google::SetLogDestination(google::GLOG_ERROR, "");
+    google::SetLogDestination(google::GLOG_FATAL, "");
+    google::SetLogDestination(google::GLOG_WARNING, "");
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
 
