@@ -3,6 +3,8 @@
 #include "glog/logging.h"
 #include "curl/curl.h"
 #include "fmt/format.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
 
 #include "config.h"
 
@@ -39,13 +41,9 @@ static size_t write_string_callback(const void * ptr, size_t size, size_t n, voi
 
 bool PveApiClient::init()
 {
-    const auto & config = Config::getInstance();
-
-    int resp_code;
-    std::string resp_data;
-    const bool ret = req(fmt::format("{}{}", config._pve_api_host, API_VERSION), "", resp_code, resp_data);
-    LOG(INFO) << resp_data;
-
+    const bool ret = checkApiHost();
+    if (!ret)
+        LOG(WARNING) << "Failed to checkApiHost!";
     return ret;
 }
 
@@ -107,4 +105,39 @@ bool PveApiClient::req(const std::string & api_url, const std::string & req_data
     curl_easy_cleanup(curl);
 
     return ret;
+}
+
+bool PveApiClient::checkApiHost() const
+{
+    const auto & config = Config::getInstance();
+
+    const std::string req_url = fmt::format("{}{}", config._pve_api_host, API_VERSION);
+    int resp_code = 0;
+    std::string resp_data;
+    const bool ret = req(req_url, "", resp_code, resp_data);
+    if (!ret || 200 != resp_code)
+    {
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        return ret;
+    }
+    rapidjson::Document d;
+    rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
+    if (!ok)
+    {
+        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
+            << "' (" << ok.Offset() << ")";
+        return false;
+    }
+
+    if (d.HasMember("data") && d["data"].IsObject())
+    {
+        const auto & data = d["data"];
+        if (data.HasMember("version") && data["version"].IsString())
+        {
+            LOG(INFO) << "Successfully got API version: " << data["version"].GetString();
+            return true;
+        }
+    }
+
+    return false;
 }

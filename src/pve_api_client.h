@@ -14,6 +14,7 @@ public:
 
 protected:
     bool req(const std::string & api_url, const std::string & req_data, int & resp_code, std::string & resp_data) const;
+    bool checkApiHost() const;
 
 private:
     // PVE API host (root url)

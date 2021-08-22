@@ -19,7 +19,7 @@ file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.cc")
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-        "3rdparty/cmdline" "3rdparty/fmt/include" "3rdparty/prebuilt/include")
+        "3rdparty/cmdline" "3rdparty/fmt/include" "3rdparty/rapidjson/include" "3rdparty/prebuilt/include")
 target_link_directories(${PROJECT_NAME} PRIVATE "3rdparty/prebuilt/lib" "3rdparty/prebuilt/lib64")
 if(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE libcurl-d glogd yaml-cppd wldap32 crypt32 Ws2_32)
