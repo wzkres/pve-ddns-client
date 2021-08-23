@@ -31,7 +31,7 @@ bool str_iequals(const std::string & l, const std::string & r)
 #if WIN32
     return 0 == _stricmp(l.c_str(), r.c_str());
 #else
-    return 0 == strcasecmp(l.c_str(), r.c_str())
+    return 0 == strcasecmp(l.c_str(), r.c_str());
 #endif
 }
 
