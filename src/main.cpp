@@ -5,7 +5,11 @@
 #include "cmdline.h"
 
 #include "config.h"
+#include "public_ip/public_ip_getter.h"
 #include "pve_api_client.h"
+
+// Running flag
+static bool g_running = false;
 
 // Command line params handling
 static bool parse_cmd(int argc, char * argv[])
@@ -85,6 +89,9 @@ int main(int argc, char * argv[])
     FLAGS_log_dir = cfg.log_path;
     FLAGS_alsologtostderr = true;
     google::SetLogFilenameExtension(".log");
+#ifndef NDEBUG
+    google::SetLogDestination(google::GLOG_INFO, "");
+#endif
     // Only one log file
     google::SetLogDestination(google::GLOG_ERROR, "");
     google::SetLogDestination(google::GLOG_FATAL, "");
@@ -101,11 +108,39 @@ int main(int argc, char * argv[])
     {
         LOG(INFO) << "Config loaded!";
         google::EnableLogCleaner(cfg.log_overdue_days);
-        std::shared_ptr<PveApiClient> pve_api_client = std::make_shared<PveApiClient>();
-        if (pve_api_client->init())
-            LOG(INFO) << "PVE API client inited!";
-        else
-            LOG(WARNING) << "PVE API client failed to init!";
+
+        do
+        {
+            IPublicIpGetter * ip_getter = PublicIpGetterFactory::create(PUBLIC_IP_GETTER_PORKBUN);
+            if (nullptr == ip_getter)
+            {
+                LOG(WARNING) << "Failed to create public ip getter " << PUBLIC_IP_GETTER_PORKBUN << "!";
+                break;
+            }
+            if (!ip_getter->setCredentials("key,sec"))
+            {
+                LOG(WARNING) << "Failed to setCredentials!";
+                PublicIpGetterFactory::destroy(ip_getter);
+                break;
+            }
+
+            std::shared_ptr<PveApiClient> pve_api_client = std::make_shared<PveApiClient>();
+            if (pve_api_client->init())
+                LOG(INFO) << "PVE API client inited!";
+            else
+            {
+                LOG(WARNING) << "PVE API client failed to init!";
+                break;
+            }
+
+            // Service loop
+            while (g_running)
+            {
+                break;
+            }
+
+            PublicIpGetterFactory::destroy(ip_getter);
+        } while (false);
     }
     else
         LOG(WARNING) << "Failed to load config from '" << cfg.yml_path << "'!";
