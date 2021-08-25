@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include <cstring>
+#include <sstream>
 
 #include "glog/logging.h"
 #include "curl/curl.h"
@@ -33,6 +34,143 @@ bool str_iequals(const std::string & l, const std::string & r)
 #else
     return 0 == strcasecmp(l.c_str(), r.c_str());
 #endif
+}
+
+// Function to check if the given string s is IPv4 or not
+bool is_ipv4(const std::string & s)
+{
+    // Store the count of occurrence
+    // of '.' in the given string
+    int cnt = 0;
+  
+    // Traverse the string s
+    for (int i = 0; i < s.size(); i++)
+    {
+        if (s[i] == '.')
+            cnt++;
+    }
+  
+    // Not a valid IP address
+    if (cnt != 3)
+        return false;
+  
+    // Stores the tokens
+    std::vector<std::string> tokens;
+  
+    // stringstream class check1
+    std::stringstream check1(s);
+    std::string intermediate;
+  
+    // Tokenizing w.r.t. '.'
+    while (getline(check1, intermediate, '.'))
+    {
+        tokens.push_back(intermediate);
+    }
+  
+    if (tokens.size() != 4)
+        return false;
+  
+    // Check if all the tokenized strings
+    // lies in the range [0, 255]
+    for (int i = 0; i < tokens.size(); i++) 
+    {
+        int num = 0;
+  
+        // Base Case
+        if (tokens[i] == "0")
+            continue;
+  
+        if (tokens[i].empty())
+            return false;
+  
+        for (int j = 0; j < tokens[i].size(); j++)
+        {
+            if (tokens[i][j] > '9' || tokens[i][j] < '0')
+                return false;
+  
+            num *= 10;
+            num += tokens[i][j] - '0';
+  
+            if (num == 0)
+                return false;
+        }
+  
+        // Range check for num
+        if (num > 255 || num < 0)
+            return false;
+    }
+  
+    return true;
+}
+  
+// Function to check if the string represents a hexadecimal number
+bool check_hex(const std::string & s)
+{
+    // Size of string s
+    int n = static_cast<int>(s.length());
+  
+    // Iterate over string
+    for (int i = 0; i < n; i++)
+    {
+        char ch = s[i];
+  
+        // Check if the character is invalid
+        if ((ch < '0' || ch > '9')
+            && (ch < 'A' || ch > 'F')
+            && (ch < 'a' || ch > 'f'))
+        {
+            return false;
+        }
+    }
+  
+    return true;
+}
+  
+// Function to check if the given string S is IPv6 or not
+bool is_ipv6(const std::string & s)
+{
+    // Store the count of occurrence
+    // of ':' in the given string
+    int cnt = 0;
+  
+    for (int i = 0; i < s.size(); i++)
+    {
+        if (s[i] == ':')
+            cnt++;
+    }
+  
+    // Not a valid IP Address
+    if (cnt != 7)
+        return false;
+  
+    // Stores the tokens
+    std::vector<std::string> tokens;
+  
+    // stringstream class check1
+    std::stringstream check1(s);
+    std::string intermediate;
+  
+    // Tokenizing w.r.t. ':'
+    while (getline(check1, intermediate, ':'))
+    {
+        tokens.push_back(intermediate);
+    }
+  
+    if (tokens.size() != 8)
+        return false;
+  
+    // Check if all the tokenized strings
+    // are in hexadecimal format
+    for (int i = 0; i < tokens.size(); i++)
+    {
+        int len = static_cast<int>(tokens[i].size());
+  
+        if (!check_hex(tokens[i]) || len > 4 || len < 1)
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool http_req(const std::string & url, const std::string & req_data, long timeout_ms,

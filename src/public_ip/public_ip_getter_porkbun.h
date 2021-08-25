@@ -11,6 +11,9 @@ public:
     std::string getIpv4() override;
     std::string getIpv6() override;
 
+protected:
+    std::string getIp(const std::string & api_host) const;
+
 private:
     std::string _service_name = PUBLIC_IP_GETTER_PORKBUN;
     std::string _api_key;
