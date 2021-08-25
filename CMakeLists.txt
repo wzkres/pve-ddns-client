@@ -14,15 +14,35 @@ if(WIN32)
     add_definitions(-DHAVE_SNPRINTF)
 endif()
 
+if(APPLE)
+    find_library(LIB_FOUNDATION Foundation)
+    if (NOT LIB_FOUNDATION)
+        message(FATAL_ERROR "Lib Foundation not found!")
+    endif()
+
+    find_library(LIB_SYSTEMCONFIGURATION SystemConfiguration)
+    if (NOT LIB_SYSTEMCONFIGURATION)
+        message(FATAL_ERROR "Lib SystemConfiguration not found")
+    endif()
+endif()
+
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.cc")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         "3rdparty/cmdline" "3rdparty/fmt/include" "3rdparty/rapidjson/include" "3rdparty/prebuilt/include")
-target_link_directories(${PROJECT_NAME} PRIVATE "3rdparty/prebuilt/lib" "3rdparty/prebuilt/lib64")
+
+set(LINK_DIRS "3rdparty/prebuilt/lib")
+if(EXISTS ${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib64)
+    list(APPEND ${LINK_DIRS} "3rdparty/prebuilt/lib64")
+endif()
+target_link_directories(${PROJECT_NAME} PRIVATE ${LINK_DIRS})
 if(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE libcurl-d glogd yaml-cppd wldap32 crypt32 Ws2_32)
+elseif(APPLE)
+    target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto z pthread dl
+                                                  ${LIB_FOUNDATION} ${LIB_SYSTEMCONFIGURATION})
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto z pthread dl)
 endif()
@@ -31,7 +51,8 @@ endif()
 add_custom_command(
         TARGET ${PROJECT_NAME}
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/res/pve-ddns-client.yml ${CMAKE_CURRENT_BINARY_DIR}/pve-ddns-client.yml
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/res/pve-ddns-client.yml
+                                         ${CMAKE_CURRENT_BINARY_DIR}/pve-ddns-client.yml
         COMMENT "Copy config yaml file to ${CMAKE_CURRENT_BINARY_DIR} directory" VERBATIM
 )
 
