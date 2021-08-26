@@ -1,4 +1,5 @@
 #include <memory>
+#include <thread>
 
 #include "glog/logging.h"
 #include "curl/curl.h"
@@ -6,10 +7,11 @@
 
 #include "config.h"
 #include "public_ip/public_ip_getter.h"
+#include "dns_service/dns_service.h"
 #include "pve_api_client.h"
 
 // Running flag
-static bool g_running = false;
+static bool g_running = true;
 
 // Command line params handling
 static bool parse_cmd(int argc, char * argv[])
@@ -133,10 +135,26 @@ int main(int argc, char * argv[])
                 break;
             }
 
+            int counter = 0;
             // Service loop
             while (g_running)
             {
-                break;
+                auto elasped_time = std::chrono::system_clock::now().time_since_epoch() - cfg._last_update_time;
+                if (elasped_time > cfg._update_interval)
+                {
+                    cfg._last_update_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()
+                    );
+
+                    cfg._my_public_ipv4 = ip_getter->getIpv4();
+                    cfg._my_public_ipv6 = ip_getter->getIpv6();
+
+                    ++counter;
+                    if (counter > 5)
+                        g_running = false;
+                }
+                else
+                    std::this_thread::sleep_for(cfg._update_interval - elasped_time);
             }
 
             PublicIpGetterFactory::destroy(ip_getter);

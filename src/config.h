@@ -70,6 +70,11 @@ public:
     // Guest configs
     std::unordered_map<int, config_node> _guest_configs;
 
+    std::string _my_public_ipv4;
+    std::string _my_public_ipv6;
+
+    std::vector<dns_record_node> _dns_records;
+
     // Last update time
     std::chrono::milliseconds _last_update_time = std::chrono::milliseconds(0);
 
