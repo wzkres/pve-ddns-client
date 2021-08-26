@@ -52,11 +52,11 @@ static bool parse_cmd(int argc, char * argv[])
             {
                 auto & config = Config::getInstance();
 
-                config.yml_path = p.get<std::string>("config");
-                if (config.yml_path.empty()) break;
+                config._yml_path = p.get<std::string>("config");
+                if (config._yml_path.empty()) break;
 
-                config.log_path = p.get<std::string>("log");
-                if (config.log_path.empty()) break;
+                config._log_path = p.get<std::string>("log");
+                if (config._log_path.empty()) break;
 
                 args_valid = true;
             } while (false);
@@ -86,7 +86,7 @@ int main(int argc, char * argv[])
 
     Config & cfg = Config::getInstance();
 
-    FLAGS_log_dir = cfg.log_path;
+    FLAGS_log_dir = cfg._log_path;
     FLAGS_alsologtostderr = true;
     google::SetLogFilenameExtension(".log");
 #ifndef NDEBUG
@@ -101,13 +101,13 @@ int main(int argc, char * argv[])
 
     curl_global_init(CURL_GLOBAL_ALL);
 
-    LOG(INFO) << "Starting up, loading config from '" << cfg.yml_path << "'...";
+    LOG(INFO) << "Starting up, loading config from '" << cfg._yml_path << "'...";
 
-    const bool cfg_valid = cfg.loadConfig(cfg.yml_path);
+    const bool cfg_valid = cfg.loadConfig(cfg._yml_path);
     if (cfg_valid)
     {
         LOG(INFO) << "Config loaded!";
-        google::EnableLogCleaner(cfg.log_overdue_days);
+        google::EnableLogCleaner(cfg._log_overdue_days);
 
         do
         {
@@ -143,7 +143,7 @@ int main(int argc, char * argv[])
         } while (false);
     }
     else
-        LOG(WARNING) << "Failed to load config from '" << cfg.yml_path << "'!";
+        LOG(WARNING) << "Failed to load config from '" << cfg._yml_path << "'!";
 
     LOG(INFO) << "Shutting down...";
     curl_global_cleanup();

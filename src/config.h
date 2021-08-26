@@ -47,14 +47,14 @@ public:
     bool loadConfig(const std::string & config_file);
 
     // Config yaml file path
-    std::string yml_path;
+    std::string _yml_path;
     // Log file saving path
-    std::string log_path;
+    std::string _log_path;
 
     // Update interval
-    std::chrono::milliseconds update_interval;
+    std::chrono::milliseconds _update_interval = std::chrono::milliseconds(300000);
     // Log cleaner keep days
-    int log_overdue_days = 3;
+    int _log_overdue_days = 3;
     // PVE API related stuff
     std::string _pve_api_host;
     std::string _pve_api_node;
