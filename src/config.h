@@ -2,6 +2,7 @@
 #define PVE_DDNS_CLIENT_SRC_CONFIG_H
 
 #include <string>
+#include <chrono>
 #include <vector>
 #include <unordered_map>
 
@@ -69,6 +70,7 @@ public:
     // Guest configs
     std::unordered_map<int, config_node> _guest_configs;
 
+    // Last update time
     std::chrono::milliseconds _last_update_time = std::chrono::milliseconds(0);
 
 private:
