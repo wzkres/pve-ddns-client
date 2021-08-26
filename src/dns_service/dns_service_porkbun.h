@@ -8,6 +8,10 @@ class DnsServicePorkbun : public IDnsService
 public:
     const std::string & getServiceName() override;
     bool setCredentials(const std::string & cred_str) override;
+    std::string getIpv4(const std::string & domain) override;
+    std::string getIpv6(const std::string & domain) override;
+    bool setIpv4(const std::string & domain) override;
+    bool setIpv6(const std::string & domain) override;
 
 protected:
 

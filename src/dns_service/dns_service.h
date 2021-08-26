@@ -10,6 +10,10 @@ class IDnsService
 public:
     virtual const std::string & getServiceName() = 0;
     virtual bool setCredentials(const std::string & cred_str) = 0;
+    virtual std::string getIpv4(const std::string & domain) = 0;
+    virtual std::string getIpv6(const std::string & domain) = 0;
+    virtual bool setIpv4(const std::string & domain) = 0;
+    virtual bool setIpv6(const std::string & domain) = 0;
 };
 
 class DnsServiceFactory

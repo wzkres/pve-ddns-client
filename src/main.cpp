@@ -1,6 +1,8 @@
 #include <memory>
 #include <thread>
+#include <unordered_map>
 
+#include "fmt/format.h"
 #include "glog/logging.h"
 #include "curl/curl.h"
 #include "cmdline.h"
@@ -13,6 +15,7 @@
 // Running flag
 static bool g_running = true;
 static IPublicIpGetter * g_ip_getter = nullptr;
+static std::unordered_map<std::string, IDnsService *> g_dns_services;
 
 // Command line params handling
 static bool parse_cmd(int argc, char * argv[])
@@ -127,6 +130,35 @@ int main(int argc, char * argv[])
                 break;
             }
 
+            if (!cfg._host_config.dns_type.empty() &&
+                !cfg._host_config.api_key.empty() &&
+                !cfg._host_config.api_secret.empty())
+            {
+                const std::string dns_service_key = fmt::format("{}:{}:{}",
+                                                                cfg._host_config.dns_type,
+                                                                cfg._host_config.api_key,
+                                                                cfg._host_config.api_secret);
+                if (g_dns_services.find(dns_service_key) == g_dns_services.end())
+                {
+                    IDnsService * dns_service = DnsServiceFactory::create(cfg._host_config.dns_type);
+                    if (nullptr == dns_service)
+                    {
+                        LOG(WARNING) << "Failed to create dns service " << cfg._host_config.dns_type << "!";
+                        break;
+                    }
+                    if (!dns_service->setCredentials(fmt::format("{},{}",
+                                                                 cfg._host_config.api_key,
+                                                                 cfg._host_config.api_secret)))
+                    {
+                        LOG(WARNING) << "Failed to setCredentials!";
+                        DnsServiceFactory::destroy(dns_service);
+                        break;
+                    }
+                    g_dns_services.emplace(dns_service_key, dns_service);
+                    dns_service->getIpv4("test");
+                }
+            }
+
             std::shared_ptr<PveApiClient> pve_api_client = std::make_shared<PveApiClient>();
             if (pve_api_client->init())
                 LOG(INFO) << "PVE API client inited!";
@@ -163,6 +195,10 @@ int main(int argc, char * argv[])
         LOG(WARNING) << "Failed to load config from '" << cfg._yml_path << "'!";
 
     LOG(INFO) << "Shutting down...";
+    for (auto & kv : g_dns_services)
+        DnsServiceFactory::destroy(kv.second);
+    g_dns_services.clear();
+
     if (nullptr != g_ip_getter)
         PublicIpGetterFactory::destroy(g_ip_getter);
     curl_global_cleanup();
