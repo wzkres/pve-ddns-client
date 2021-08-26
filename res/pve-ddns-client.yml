@@ -1,6 +1,9 @@
 general:
   update-interval-ms: 300000
   log-overdue-days: 3
+  public-ip:
+    service: porkbun
+    credentials: pk1_,sk1_
   pve-api:
     host: https://host.pve.com:8006
     node: pvenode

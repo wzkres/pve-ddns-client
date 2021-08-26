@@ -56,6 +56,11 @@ public:
     std::chrono::milliseconds _update_interval = std::chrono::milliseconds(300000);
     // Log cleaner keep days
     int _log_overdue_days = 3;
+
+    // Public IP service related
+    std::string _public_ip_service;
+    std::string _public_ip_credentials;
+
     // PVE API related stuff
     std::string _pve_api_host;
     std::string _pve_api_node;

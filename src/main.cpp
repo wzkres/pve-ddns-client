@@ -12,6 +12,7 @@
 
 // Running flag
 static bool g_running = true;
+static IPublicIpGetter * g_ip_getter = nullptr;
 
 // Command line params handling
 static bool parse_cmd(int argc, char * argv[])
@@ -113,16 +114,16 @@ int main(int argc, char * argv[])
 
         do
         {
-            IPublicIpGetter * ip_getter = PublicIpGetterFactory::create(PUBLIC_IP_GETTER_PORKBUN);
-            if (nullptr == ip_getter)
+            g_ip_getter = PublicIpGetterFactory::create(cfg._public_ip_service);
+            if (nullptr == g_ip_getter)
             {
                 LOG(WARNING) << "Failed to create public ip getter " << PUBLIC_IP_GETTER_PORKBUN << "!";
                 break;
             }
-            if (!ip_getter->setCredentials("key,sec"))
+            if (!g_ip_getter->setCredentials(cfg._public_ip_credentials))
             {
                 LOG(WARNING) << "Failed to setCredentials!";
-                PublicIpGetterFactory::destroy(ip_getter);
+                PublicIpGetterFactory::destroy(g_ip_getter);
                 break;
             }
 
@@ -146,8 +147,8 @@ int main(int argc, char * argv[])
                         std::chrono::system_clock::now().time_since_epoch()
                     );
 
-                    cfg._my_public_ipv4 = ip_getter->getIpv4();
-                    cfg._my_public_ipv6 = ip_getter->getIpv6();
+                    cfg._my_public_ipv4 = g_ip_getter->getIpv4();
+                    cfg._my_public_ipv6 = g_ip_getter->getIpv6();
 
                     ++counter;
                     if (counter > 5)
@@ -156,14 +157,14 @@ int main(int argc, char * argv[])
                 else
                     std::this_thread::sleep_for(cfg._update_interval - elasped_time);
             }
-
-            PublicIpGetterFactory::destroy(ip_getter);
         } while (false);
     }
     else
         LOG(WARNING) << "Failed to load config from '" << cfg._yml_path << "'!";
 
     LOG(INFO) << "Shutting down...";
+    if (nullptr != g_ip_getter)
+        PublicIpGetterFactory::destroy(g_ip_getter);
     curl_global_cleanup();
     google::ShutdownGoogleLogging();
     return EXIT_SUCCESS;

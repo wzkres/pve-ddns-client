@@ -13,6 +13,14 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
     }
     if (yaml_node["log-overdue-days"])
         config._log_overdue_days = yaml_node["log-overdue-days"].as<int>();
+    if (yaml_node["public-ip"])
+    {
+        const auto & pi = yaml_node["public-ip"];
+        if (pi["service"])
+            config._public_ip_service = pi["service"].as<std::string>();
+        if (pi["credentials"])
+            config._public_ip_credentials = pi["credentials"].as<std::string>();
+    }
     if (yaml_node["pve-api"])
     {
         const auto & pa = yaml_node["pve-api"];
