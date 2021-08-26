@@ -6,6 +6,11 @@
 // Parse general config from yaml node
 static void parse_general_config(const YAML::Node & yaml_node, Config & config)
 {
+    if (yaml_node["update-interval-ms"])
+    {
+        const auto interval_ms = yaml_node["update-interval-ms"].as<uint64_t>();
+        config.update_interval = std::chrono::milliseconds(interval_ms);
+    }
     if (yaml_node["log-overdue-days"])
         config.log_overdue_days = yaml_node["log-overdue-days"].as<int>();
     if (yaml_node["pve-api"])

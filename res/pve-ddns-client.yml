@@ -1,4 +1,5 @@
 general:
+  update-interval-ms: 300000
   log-overdue-days: 3
   pve-api:
     host: https://host.pve.com:8006

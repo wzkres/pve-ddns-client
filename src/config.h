@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 // Config node
-typedef struct _config_node
+typedef struct config_node_
 {
     // DNS service type
     std::string dns_type;
@@ -19,6 +19,19 @@ typedef struct _config_node
     // IPv6 domain names to update
     std::vector<std::string> ipv6_domains;
 } config_node;
+
+// DNS record node
+typedef struct dns_record_node_
+{
+    // Domain name
+    std::string domain_name;
+    // Is IPv6
+    bool is_v6;
+    // Last get time (resolve)
+    std::chrono::milliseconds last_get_time;
+    // Last IP
+    std::string last_ip;
+} dns_record_node;
 
 // Global config singleton
 class Config
@@ -38,6 +51,8 @@ public:
     // Log file saving path
     std::string log_path;
 
+    // Update interval
+    std::chrono::milliseconds update_interval;
     // Log cleaner keep days
     int log_overdue_days = 3;
     // PVE API related stuff
@@ -53,6 +68,8 @@ public:
     config_node _host_config;
     // Guest configs
     std::unordered_map<int, config_node> _guest_configs;
+
+    std::chrono::milliseconds _last_update_time = std::chrono::milliseconds(0);
 
 private:
     // ctor is hidden
