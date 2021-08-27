@@ -36,6 +36,23 @@ bool str_iequals(const std::string & l, const std::string & r)
 #endif
 }
 
+std::pair<std::string, std::string> get_sub_domain(const std::string & domain)
+{
+    size_t pos = std::string::npos;
+    size_t dot_pos = std::string::npos;
+    std::string token;
+    while ((pos = domain.rfind('.', dot_pos)) != std::string::npos)
+    {
+        if (dot_pos != std::string::npos)
+            break;
+        dot_pos = pos - 1;
+        pos = std::string::npos;
+    }
+    if (std::string::npos == pos)
+        return std::make_pair(domain, "");
+    return std::make_pair(domain.substr(pos + 1), domain.substr(0, pos));
+}
+
 // Function to check if the given string s is IPv4 or not
 bool is_ipv4(const std::string & s)
 {
@@ -200,7 +217,7 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
         char errbuf[CURL_ERROR_SIZE] = {};
         curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
 #ifndef NDEBUG
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+//        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 #endif
         curl_slist * http_headers = nullptr;
         for (const auto & custom_header : custom_headers)

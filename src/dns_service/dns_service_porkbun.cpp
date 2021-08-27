@@ -34,11 +34,34 @@ bool DnsServicePorkbun::setCredentials(const std::string & cred_str)
 
     return true;
 }
+
 std::string DnsServicePorkbun::getIpv4(const std::string & domain)
 {
-    const std::string api_part = fmt::format(API_RETRIEVE, domain, "A", "");
+    return getIp(domain, true);
+}
+
+std::string DnsServicePorkbun::getIpv6(const std::string & domain)
+{
+    return getIp(domain, false);
+}
+
+bool DnsServicePorkbun::setIpv4(const std::string & domain)
+{
+    return false;
+}
+
+bool DnsServicePorkbun::setIpv6(const std::string & domain)
+{
+    return false;
+}
+
+std::string DnsServicePorkbun::getIp(const std::string & domain, bool is_v4)
+{
+    const auto sub_domain = get_sub_domain(domain);
+    const std::string api_part = fmt::format(API_RETRIEVE, sub_domain.first, is_v4 ? "A" : "AAAA", sub_domain.second);
     const std::string req_url = fmt::format("{}{}", API_HOST, api_part);
     const std::string req_body = fmt::format(R"({{"secretapikey":"{}","apikey":"{}"}})", _api_secret, _api_key);
+
     int resp_code = 0;
     std::string resp_data;
     const bool ret = http_req(req_url, req_body, Config::getInstance()._http_timeout_ms, {}, resp_code, resp_data);
@@ -47,7 +70,7 @@ std::string DnsServicePorkbun::getIpv4(const std::string & domain)
         LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
         return "";
     }
-    LOG(INFO) << resp_data;
+//    LOG(INFO) << resp_data;
     rapidjson::Document d;
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
@@ -62,20 +85,11 @@ std::string DnsServicePorkbun::getIpv4(const std::string & domain)
         const std::string status_str = d["status"].GetString();
         if ("SUCCESS" == status_str)
         {
+            auto it = d["records"].Begin();
+            while (it != d["records"].End())
+                return (*it)["content"].GetString();
         }
     }
 
     return "";
-}
-std::string DnsServicePorkbun::getIpv6(const std::string & domain)
-{
-    return std::string();
-}
-bool DnsServicePorkbun::setIpv4(const std::string & domain)
-{
-    return false;
-}
-bool DnsServicePorkbun::setIpv6(const std::string & domain)
-{
-    return false;
 }

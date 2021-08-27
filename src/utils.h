@@ -5,6 +5,7 @@
 #include <vector>
 
 bool str_iequals(const std::string & l, const std::string & r);
+std::pair<std::string, std::string> get_sub_domain(const std::string & domain);
 bool is_ipv4(const std::string & s);
 bool check_hex(const std::string & s);
 bool is_ipv6(const std::string & s);

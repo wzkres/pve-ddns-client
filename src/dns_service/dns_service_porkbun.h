@@ -14,6 +14,7 @@ public:
     bool setIpv6(const std::string & domain) override;
 
 protected:
+    std::string getIp(const std::string & domain, bool is_v4);
 
 private:
     std::string _service_name = DNS_SERVICE_PORKBUN;
