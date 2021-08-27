@@ -6,6 +6,7 @@
 #include "rapidjson/error/en.h"
 
 #include "../utils.h"
+#include "../config.h"
 
 static const char * API_HOST = "https://porkbun.com/api/json/v3/";
 static const char * API_RETRIEVE = "dns/retrieveByNameType/{}/{}/{}";
@@ -40,7 +41,7 @@ std::string DnsServicePorkbun::getIpv4(const std::string & domain)
     const std::string req_body = fmt::format(R"({{"secretapikey":"{}","apikey":"{}"}})", _api_secret, _api_key);
     int resp_code = 0;
     std::string resp_data;
-    const bool ret = http_req(req_url, req_body, 30000, {}, resp_code, resp_data);
+    const bool ret = http_req(req_url, req_body, Config::getInstance()._http_timeout_ms, {}, resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
         LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";

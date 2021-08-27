@@ -52,6 +52,9 @@ public:
     // Log file saving path
     std::string _log_path;
 
+    // Default http request timeout 30s
+    long _http_timeout_ms = 30000;
+
     // Update interval
     std::chrono::milliseconds _update_interval = std::chrono::milliseconds(300000);
     // Log cleaner keep days

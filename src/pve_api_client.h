@@ -21,8 +21,6 @@ private:
     std::string _api_host;
     // PVE API access token
     std::string _api_token;
-    // Default http request timeout 30s
-    long _req_timeout = 30000;
 };
 
 #endif //PVE_DDNS_CLIENT_SRC_PVEAPICLIENT_H

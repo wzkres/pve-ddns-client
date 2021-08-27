@@ -32,7 +32,7 @@ bool PveApiClient::req(const std::string & api_url, const std::string & req_data
                        int & resp_code, std::string & resp_data) const
 {
     std::vector<std::string> headers = { get_pve_api_http_auth_header() };
-    return http_req(api_url, req_data, _req_timeout, headers, resp_code, resp_data);
+    return http_req(api_url, req_data, Config::getInstance()._http_timeout_ms, headers, resp_code, resp_data);
 }
 
 bool PveApiClient::checkApiHost() const
