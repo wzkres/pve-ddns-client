@@ -159,7 +159,6 @@ static void cleanup_dns_services()
     g_dns_services.clear();
 }
 
-
 static bool init_dns_services()
 {
     const auto & cfg = Config::getInstance();

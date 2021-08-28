@@ -50,8 +50,8 @@ std::pair<std::string, std::string> get_sub_domain(const std::string & domain)
         pos = std::string::npos;
     }
     if (std::string::npos == pos)
-        return std::make_pair(domain, "");
-    return std::make_pair(domain.substr(pos + 1), domain.substr(0, pos));
+        return { domain, "" };
+    return { domain.substr(pos + 1), domain.substr(0, pos) };
 }
 
 std::string get_dns_service_key(const std::string & dns_type,
