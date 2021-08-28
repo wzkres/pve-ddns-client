@@ -6,22 +6,22 @@ general:
     credentials: pk1_,sk1_
   pve-api:
     host: https://host.pve.com:8006
-    node: pvenode
-    iface: vmbr0
     user: root
     realm: pam
     token-id: ddns
     token-uuid: uuid
 host:
+  node: node
+  iface: vmbr0
   dns: porkbun
   api-key: 123
   api-secret: 456
   ipv4: ["xxx.xxx.xxx", "aaa.xxx.xxx"]
   ipv6: ["aaa.bbb.ccc", "ddd.eee.fff"]
 guests:
-  - vmid: 100
-    dns: porkbun
-    api-key: 123
+  - node: node
+    vmid: 100
+    iface: ens18
     api-secret: 456
     ipv4: ["xxx.xxx.xxx", "aaa.xxx.xxx"]
     ipv6: ["aaa.bbb.ccc", "ddd.eee.fff"]

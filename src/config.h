@@ -9,6 +9,10 @@
 // Config node
 typedef struct config_node_
 {
+    // PVE node
+    std::string node;
+    // Interface name
+    std::string iface;
     // DNS service type
     std::string dns_type;
     // API key
@@ -24,10 +28,6 @@ typedef struct config_node_
 // DNS record node
 typedef struct dns_record_node_
 {
-    // Domain name
-    std::string domain_name;
-    // Is IPv6
-    bool is_v6;
     // Last get time (resolve)
     std::chrono::milliseconds last_get_time;
     // Last IP
@@ -66,8 +66,6 @@ public:
 
     // PVE API related stuff
     std::string _pve_api_host;
-    std::string _pve_api_node;
-    std::string _pve_api_iface;
     std::string _pve_api_user;
     std::string _pve_api_realm;
     std::string _pve_api_token_id;
@@ -81,7 +79,8 @@ public:
     std::string _my_public_ipv4;
     std::string _my_public_ipv6;
 
-    std::vector<dns_record_node> _dns_records;
+    std::unordered_map<std::string, dns_record_node> _ipv4_records;
+    std::unordered_map<std::string, dns_record_node> _ipv6_records;
 
     // Last update time
     std::chrono::milliseconds _last_update_time = std::chrono::milliseconds(0);

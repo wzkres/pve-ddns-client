@@ -8,6 +8,7 @@
 #include "cmdline.h"
 
 #include "config.h"
+#include "utils.h"
 #include "public_ip/public_ip_getter.h"
 #include "dns_service/dns_service.h"
 #include "pve_api_client.h"
@@ -84,6 +85,206 @@ static bool parse_cmd(int argc, char * argv[])
     return ret;
 }
 
+static bool init_public_ip_getter()
+{
+    if (nullptr != g_ip_getter)
+    {
+        LOG(WARNING) << "g_ip_getter is not nullptr!";
+        return false;
+    }
+
+    auto & cfg = Config::getInstance();
+    g_ip_getter = PublicIpGetterFactory::create(cfg._public_ip_service);
+    if (nullptr == g_ip_getter)
+    {
+        LOG(WARNING) << "Failed to create public ip getter " << PUBLIC_IP_GETTER_PORKBUN << "!";
+        return false;
+    }
+    if (!g_ip_getter->setCredentials(cfg._public_ip_credentials))
+    {
+        LOG(WARNING) << "Failed to setCredentials!";
+        PublicIpGetterFactory::destroy(g_ip_getter);
+        return false;
+    }
+
+    cfg._my_public_ipv4 = g_ip_getter->getIpv4();
+    cfg._my_public_ipv6 = g_ip_getter->getIpv6();
+
+    return true;
+}
+
+static void cleanup_public_ip_getter()
+{
+    if (nullptr != g_ip_getter)
+        PublicIpGetterFactory::destroy(g_ip_getter);
+}
+
+static IDnsService * get_dns_service(const std::string & service_key)
+{
+    auto it = g_dns_services.find(service_key);
+    if (g_dns_services.end() == it)
+        return nullptr;
+    return it->second;
+}
+
+static bool create_dns_service(const std::string & dns_type,
+                               const std::string & api_key,
+                               const std::string & api_secret)
+{
+    const std::string key = get_dns_service_key(dns_type, api_key, api_secret);
+    if (g_dns_services.find(key) == g_dns_services.end())
+    {
+        IDnsService * dns_service = DnsServiceFactory::create(dns_type);
+        if (nullptr == dns_service)
+        {
+            LOG(WARNING) << "Failed to create dns service " << dns_type << "!";
+            return false;
+        }
+        if (!dns_service->setCredentials(fmt::format("{},{}", api_key, api_secret)))
+        {
+            LOG(WARNING) << "Failed to setCredentials!";
+            DnsServiceFactory::destroy(dns_service);
+            return false;
+        }
+        g_dns_services.emplace(key, dns_service);
+    }
+
+    return true;
+}
+
+static void cleanup_dns_services()
+{
+    for (auto & kv : g_dns_services)
+        DnsServiceFactory::destroy(kv.second);
+    g_dns_services.clear();
+}
+
+
+static bool init_dns_services()
+{
+    const auto & cfg = Config::getInstance();
+    if (!cfg._host_config.dns_type.empty() && !cfg._host_config.api_key.empty() && !cfg._host_config.api_secret.empty())
+        if (!create_dns_service(cfg._host_config.dns_type, cfg._host_config.api_key, cfg._host_config.api_secret))
+            return false;
+
+    for (auto & guest_config : cfg._guest_configs)
+    {
+        if (!guest_config.second.dns_type.empty() &&
+            !guest_config.second.api_key.empty() && !guest_config.second.api_secret.empty())
+        {
+            if (!create_dns_service(guest_config.second.dns_type,
+                                    guest_config.second.api_key,
+                                    guest_config.second.api_secret))
+            {
+                cleanup_dns_services();
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+static void init_dns_records()
+{
+    auto & cfg = Config::getInstance();
+    std::string dns_service_key = get_dns_service_key(cfg._host_config.dns_type,
+                                                      cfg._host_config.api_key,
+                                                      cfg._host_config.api_secret);
+    auto * host_dns_service = get_dns_service(dns_service_key);
+    if (nullptr != host_dns_service)
+    {
+        for (const auto & domain : cfg._host_config.ipv4_domains)
+        {
+            auto found = cfg._ipv4_records.find(domain);
+            if (cfg._ipv4_records.end() == found)
+            {
+                std::string ip = host_dns_service->getIpv4(domain);
+                LOG(INFO) << "Domain '" << domain << "', A record is: '" << ip << "'.";
+                cfg._ipv4_records.emplace(
+                    domain,
+                    dns_record_node
+                    {
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::system_clock::now().time_since_epoch()
+                        ),
+                        ip
+                    }
+                );
+            }
+        }
+
+        for (const auto & domain : cfg._host_config.ipv6_domains)
+        {
+            auto found = cfg._ipv6_records.find(domain);
+            if (cfg._ipv6_records.end() == found)
+            {
+                std::string ip = host_dns_service->getIpv6(domain);
+                LOG(INFO) << "Domain '" << domain << "', AAAA record is: '" << ip << "'.";
+                cfg._ipv6_records.emplace(
+                    domain,
+                    dns_record_node
+                    {
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::system_clock::now().time_since_epoch()
+                        ),
+                        ip
+                    }
+                );
+            }
+        }
+    }
+
+    for (auto & guest : cfg._guest_configs)
+    {
+        const auto & dns_config = guest.second;
+        dns_service_key = get_dns_service_key(dns_config.dns_type, dns_config.api_key, dns_config.api_secret);
+        auto * guest_dns_service = get_dns_service(dns_service_key);
+        if (nullptr != guest_dns_service)
+        {
+            for (const auto & domain : dns_config.ipv4_domains)
+            {
+                auto found = cfg._ipv4_records.find(domain);
+                if (cfg._ipv4_records.end() == found)
+                {
+                    std::string ip = guest_dns_service->getIpv4(domain);
+                    LOG(INFO) << "Domain '" << domain << "', A record is: '" << ip << "'.";
+                    cfg._ipv4_records.emplace(
+                        domain,
+                        dns_record_node
+                        {
+                            std::chrono::duration_cast<std::chrono::milliseconds>(
+                                std::chrono::system_clock::now().time_since_epoch()
+                            ),
+                            ip
+                        }
+                    );
+                }
+            }
+
+            for (const auto & domain : dns_config.ipv6_domains)
+            {
+                auto found = cfg._ipv6_records.find(domain);
+                if (cfg._ipv6_records.end() == found)
+                {
+                    std::string ip = guest_dns_service->getIpv6(domain);
+                    LOG(INFO) << "Domain '" << domain << "', AAAA record is: '" << ip << "'.";
+                    cfg._ipv6_records.emplace(
+                        domain,
+                        dns_record_node
+                        {
+                            std::chrono::duration_cast<std::chrono::milliseconds>(
+                                std::chrono::system_clock::now().time_since_epoch()
+                            ),
+                            ip
+                        }
+                    );
+                }
+            }
+        }
+    }
+}
+
 // main
 int main(int argc, char * argv[])
 {
@@ -117,47 +318,20 @@ int main(int argc, char * argv[])
 
         do
         {
-            g_ip_getter = PublicIpGetterFactory::create(cfg._public_ip_service);
-            if (nullptr == g_ip_getter)
+            if (!init_public_ip_getter())
             {
-                LOG(WARNING) << "Failed to create public ip getter " << PUBLIC_IP_GETTER_PORKBUN << "!";
+                LOG(WARNING) << "Failed to init public ip!";
                 break;
             }
-            if (!g_ip_getter->setCredentials(cfg._public_ip_credentials))
+            LOG(INFO) << "Public IP getter inited!";
+            if (!init_dns_services())
             {
-                LOG(WARNING) << "Failed to setCredentials!";
-                PublicIpGetterFactory::destroy(g_ip_getter);
+                LOG(WARNING) << "Failed to init dns services!";
                 break;
             }
-
-            if (!cfg._host_config.dns_type.empty() &&
-                !cfg._host_config.api_key.empty() &&
-                !cfg._host_config.api_secret.empty())
-            {
-                const std::string dns_service_key = fmt::format("{}:{}:{}",
-                                                                cfg._host_config.dns_type,
-                                                                cfg._host_config.api_key,
-                                                                cfg._host_config.api_secret);
-                if (g_dns_services.find(dns_service_key) == g_dns_services.end())
-                {
-                    IDnsService * dns_service = DnsServiceFactory::create(cfg._host_config.dns_type);
-                    if (nullptr == dns_service)
-                    {
-                        LOG(WARNING) << "Failed to create dns service " << cfg._host_config.dns_type << "!";
-                        break;
-                    }
-                    if (!dns_service->setCredentials(fmt::format("{},{}",
-                                                                 cfg._host_config.api_key,
-                                                                 cfg._host_config.api_secret)))
-                    {
-                        LOG(WARNING) << "Failed to setCredentials!";
-                        DnsServiceFactory::destroy(dns_service);
-                        break;
-                    }
-                    g_dns_services.emplace(dns_service_key, dns_service);
-                    dns_service->getIpv4("test");
-                }
-            }
+            LOG(INFO) << "All DNS services inited!";
+            init_dns_records();
+            LOG(INFO) << "Initial dns records updated!";
 
             std::shared_ptr<PveApiClient> pve_api_client = std::make_shared<PveApiClient>();
             if (pve_api_client->init())
@@ -179,9 +353,6 @@ int main(int argc, char * argv[])
                         std::chrono::system_clock::now().time_since_epoch()
                     );
 
-                    cfg._my_public_ipv4 = g_ip_getter->getIpv4();
-                    cfg._my_public_ipv6 = g_ip_getter->getIpv6();
-
                     ++counter;
                     if (counter > 5)
                         g_running = false;
@@ -195,13 +366,10 @@ int main(int argc, char * argv[])
         LOG(WARNING) << "Failed to load config from '" << cfg._yml_path << "'!";
 
     LOG(INFO) << "Shutting down...";
-    for (auto & kv : g_dns_services)
-        DnsServiceFactory::destroy(kv.second);
-    g_dns_services.clear();
-
-    if (nullptr != g_ip_getter)
-        PublicIpGetterFactory::destroy(g_ip_getter);
+    cleanup_dns_services();
+    cleanup_public_ip_getter();
     curl_global_cleanup();
     google::ShutdownGoogleLogging();
+
     return EXIT_SUCCESS;
 }

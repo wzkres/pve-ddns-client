@@ -31,10 +31,6 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
             if (config._pve_api_host[config._pve_api_host.length() - 1] != '/')
                 config._pve_api_host.append("/");
         }
-        if (pa["node"])
-            config._pve_api_node = pa["node"].as<std::string>();
-        if (pa["iface"])
-            config._pve_api_iface = pa["iface"].as<std::string>();
         if (pa["user"])
             config._pve_api_user = pa["user"].as<std::string>();
         if (pa["realm"])
@@ -49,6 +45,10 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
 // Parse ddns config from yaml node
 static void parse_ddns_config(const YAML::Node & yaml_node, config_node & cfg_node)
 {
+    if (yaml_node["node"])
+        cfg_node.node = yaml_node["node"].as<std::string>();
+    if (yaml_node["iface"])
+        cfg_node.iface = yaml_node["iface"].as<std::string>();
     if (yaml_node["dns"])
         cfg_node.dns_type = yaml_node["dns"].as<std::string>();
     if (yaml_node["api-key"])
