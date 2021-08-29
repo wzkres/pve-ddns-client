@@ -5,7 +5,7 @@ general:
     service: porkbun
     credentials: pk1_,sk1_
   pve-api:
-    host: https://host.pve.com:8006
+    host: https://pve.domain.com:8006
     user: root
     realm: pam
     token-id: ddns
@@ -14,20 +14,23 @@ host:
   node: node
   iface: vmbr0
   dns: porkbun
-  api-key: 123
-  api-secret: 456
-  ipv4: ["xxx.xxx.xxx", "aaa.xxx.xxx"]
-  ipv6: ["aaa.bbb.ccc", "ddd.eee.fff"]
+  api-key: pk1_
+  api-secret: sk1_
+  ipv4: ["sub1.domain.com", "sub2.domain.com"]
+  ipv6: ["sub3.domain.com", "sub.domain.net"]
 guests:
   - node: node
     vmid: 100
     iface: ens18
-    api-secret: 456
-    ipv4: ["xxx.xxx.xxx", "aaa.xxx.xxx"]
-    ipv6: ["aaa.bbb.ccc", "ddd.eee.fff"]
-  - vmid: 200
+    api-key: pk1_
+    api-secret: sk1_
+    ipv4: ["sub4.domain.com", "sub5.domain.com"]
+    ipv6: ["sub6.domain.com", "sub2.domain.net"]
+  - node: node
+    vmid: 101
+    iface: ens18
     dns: porkbun
-    api-key: 123
-    api-secret: 456
-    ipv4: ["xxx.xxx.xxx", "aaa.xxx.xxx"]
-    ipv6: ["aaa.bbb.ccc", "ddd.eee.fff"]
+    api-key: pk1_
+    api-secret: sk1_
+    ipv4: ["sub7.domain.com", "sub8.domain.com"]
+    ipv6: ["sub9.domain.com", "sub3.domain.net"]
