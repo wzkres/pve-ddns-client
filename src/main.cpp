@@ -435,11 +435,36 @@ static bool sync_host_static_v6_address(const std::shared_ptr<PveApiClient> & pv
     LOG(INFO) << "Host v6 static address 1st part changed from '" << host_1st_part << "' to '"
         << guest_1st_part << "', updating host static IPv6 address to '" << new_host_v6_address << "'...";
 
-    const auto & cfg = Config::getInstance();
-    if (!pve_api_client->setHostIpv6Address(cfg._host_config.node, cfg._host_config.iface, new_host_v6_address))
-        LOG(WARNING) << "Failed to update synced host static IPv6 address!";
-    else
-        LOG(INFO) << "Host static IPv6 address successfully updated.";
+    int retry_count = 0;
+    while(retry_count < 5)
+    {
+        const auto & cfg = Config::getInstance();
+        if (!pve_api_client->setHostIpv6Address(cfg._host_config.node, cfg._host_config.iface, new_host_v6_address))
+        {
+            LOG(WARNING) << "Failed to update synced host static IPv6 address, retry in 1 minute("
+                << retry_count << ")...";
+            std::this_thread::sleep_for(std::chrono::minutes(1));
+            ++retry_count;
+            continue;
+        }
+        else
+            LOG(INFO) << "Host static IPv6 address successfully updated.";
+
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+
+        if (!update_dns_records(cfg._host_config, new_host_v6_address, false))
+        {
+            LOG(WARNING) << "Failed to update synced host v6 dns records, retry in 1 minute("
+                << retry_count << ")";
+            std::this_thread::sleep_for(std::chrono::minutes(1));
+            ++retry_count;
+            continue;
+        }
+        else
+            LOG(INFO) << "Synced host v6 dns records successfully updated!";
+
+        break;
+    }
 
     return true;
 }
