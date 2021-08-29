@@ -224,9 +224,9 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
     {
         char errbuf[CURL_ERROR_SIZE] = {};
         curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
-#ifndef NDEBUG
+//#ifndef NDEBUG
 //        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-#endif
+//#endif
         curl_slist * http_headers = nullptr;
         for (const auto & custom_header : custom_headers)
         {

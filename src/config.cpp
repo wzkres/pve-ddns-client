@@ -81,7 +81,7 @@ bool Config::loadConfig(const std::string & config_file)
         // Mandatory general node
         if (conf["general"])
         {
-            LOG(INFO) << "Found general conf!";
+            LOG(INFO) << "Found general config!";
             parse_general_config(conf["general"], *this);
         }
         else
@@ -92,7 +92,7 @@ bool Config::loadConfig(const std::string & config_file)
         // Load host config if specified
         if (conf["host"])
         {
-            LOG(INFO) << "Found host conf!";
+            LOG(INFO) << "Found host config!";
             parse_ddns_config(conf["host"], _host_config);
             LOG(INFO) << "Host conf loaded, " << _host_config.ipv4_domains.size() << " ipv4 domain(s), "
                 << _host_config.ipv6_domains.size() << " ipv6 domain(s)!";
@@ -100,7 +100,7 @@ bool Config::loadConfig(const std::string & config_file)
         // Load each guest config if any
         if (conf["guests"] && conf["guests"].IsSequence())
         {
-            LOG(INFO) << "Found guests conf!";
+            LOG(INFO) << "Found guests config!";
             const auto & guests = conf["guests"];
             for (auto it = guests.begin(); it != guests.end(); ++it)
             {

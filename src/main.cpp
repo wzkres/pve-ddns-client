@@ -2,6 +2,12 @@
 #include <thread>
 #include <unordered_map>
 
+//#ifdef WIN32
+//#include <windows.h>
+//#else
+//#include <signal.h>
+//#endif
+
 #include "fmt/format.h"
 #include "glog/logging.h"
 #include "curl/curl.h"
@@ -14,9 +20,25 @@
 #include "pve_api_client.h"
 
 // Running flag
-static bool g_running = true;
+static volatile bool g_running = true;
 static IPublicIpGetter * g_ip_getter = nullptr;
 static std::unordered_map<std::string, IDnsService *> g_dns_services;
+
+#ifdef WIN32
+static BOOL WINAPI ctrl_handler(DWORD fdw_ctrl_type)
+{
+    if (CTRL_C_EVENT == fdw_ctrl_type)
+    {
+        LOG(INFO) << "Received ctrl+c event, stopping...";
+        g_running = false;
+        return TRUE;
+    }
+
+    LOG(WARNING) << "Received ctrl event: " << fdw_ctrl_type << ", ignored!";
+    return FALSE;
+}
+#else
+#endif
 
 // Command line params handling
 static bool parse_cmd(int argc, char * argv[])
@@ -284,9 +306,91 @@ static void init_dns_records()
     }
 }
 
+static bool update_dns_records(const config_node & config_node, const std::string & ip, const bool is_v4)
+{
+    auto & cfg = Config::getInstance();
+    std::string dns_service_key = get_dns_service_key(cfg._host_config.dns_type,
+                                                      cfg._host_config.api_key,
+                                                      cfg._host_config.api_secret);
+    auto * dns_service = get_dns_service(dns_service_key);
+    if (nullptr == dns_service)
+    {
+        LOG(WARNING) << "Failed to find dns service of '" << cfg._host_config.dns_type << "'!";
+        return false;
+    }
+
+    if (is_v4)
+    {
+        for (const auto & domain : config_node.ipv4_domains)
+        {
+            auto found = cfg._ipv4_records.find(domain);
+            if (cfg._ipv4_records.end() == found)
+            {
+                LOG(WARNING) << "IPv4 domain '" << domain << "' dns record not found!";
+                return false;
+            }
+            if (found->second.last_ip != ip)
+            {
+                LOG(INFO) << "IPv4 domain '" << domain << "' dns record address changed from '" << found->second.last_ip
+                    << "' to '" << ip << "', updating...";
+                if (dns_service->setIpv4(domain, ip))
+                {
+                    LOG(INFO) << "IPv4 record of domain '" << domain << "' successfully updated from '"
+                        << found->second.last_ip << "' to '" << ip << "'.";
+                    found->second.last_ip = ip;
+                    found->second.last_get_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()
+                    );
+                }
+                else
+                {
+                    LOG(WARNING) << "Failed to update IPv4 record from '" << found->second.last_ip << "' to '"
+                        << ip << "' of domain '" << domain << "'!";
+                }
+            }
+        }
+    }
+    else
+    {
+        for (const auto & domain : config_node.ipv6_domains)
+        {
+            auto found = cfg._ipv6_records.find(domain);
+            if (cfg._ipv6_records.end() == found)
+            {
+                LOG(WARNING) << "IPv6 domain '" << domain << "' dns record not found!";
+                return false;
+            }
+            if (found->second.last_ip != ip)
+            {
+                LOG(INFO) << "IPv6 domain '" << domain << "' dns record address changed from '" << found->second.last_ip
+                << "' to '" << ip << "', updating...";
+                if (dns_service->setIpv6(domain, ip))
+                {
+                    LOG(INFO) << "IPv6 record of domain '" << domain << "' successfully updated from '"
+                        << found->second.last_ip << "' to '" << ip << "'.";
+                    found->second.last_ip = ip;
+                    found->second.last_get_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()
+                    );
+                }
+                else
+                {
+                    LOG(WARNING) << "Failed to update IPv6 record from '" << found->second.last_ip << "' to '"
+                        << ip << "' of domain '" << domain << "'!";
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
 // main
 int main(int argc, char * argv[])
 {
+//#ifdef WIN32
+//    SetConsoleCtrlHandler(ctrl_handler, TRUE);
+//#endif
     if (!parse_cmd(argc, argv))
         return EXIT_SUCCESS;
 
@@ -341,7 +445,6 @@ int main(int argc, char * argv[])
                 break;
             }
 
-            int counter = 0;
             // Service loop
             while (g_running)
             {
@@ -352,9 +455,57 @@ int main(int argc, char * argv[])
                         std::chrono::system_clock::now().time_since_epoch()
                     );
 
-                    ++counter;
-                    if (counter > 5)
-                        g_running = false;
+                    auto ret = pve_api_client->getHostIp(cfg._host_config.node, cfg._host_config.iface);
+                    if (ret.first.empty() && ret.second.empty())
+                    {
+                        if (!cfg._host_config.ipv4_domains.empty() && ret.first.empty())
+                        {
+                            LOG(WARNING) << "Failed to get host IPv4 address!";
+                            g_running = false;
+                        }
+                        else if (!cfg._host_config.ipv4_domains.empty() && !ret.first.empty())
+                        {
+                            if (!update_dns_records(cfg._host_config, ret.first, true))
+                                LOG(WARNING) << "Failed to update host v4 dns records!";
+                        }
+
+                        if (!cfg._host_config.ipv6_domains.empty() && ret.second.empty())
+                        {
+                            LOG(WARNING) << "Failed to get host IPv6 address!";
+                            g_running = false;
+                        }
+                        else if (!cfg._host_config.ipv6_domains.empty() && !ret.second.empty())
+                        {
+                            if (!update_dns_records(cfg._host_config, ret.second, false))
+                                LOG(WARNING) << "Failed to update host v6 dns records!";
+                        }
+                    }
+
+                    for (auto & guest : cfg._guest_configs)
+                    {
+                        ret = pve_api_client->getGuestIp(guest.second.node, guest.first, guest.second.iface);
+                        if (!guest.second.ipv4_domains.empty() && ret.first.empty())
+                        {
+                            LOG(WARNING) << "Failed to get guest(vmid: " << guest.first << ") IPv4 address!";
+                            g_running = false;
+                        }
+                        else if (!guest.second.ipv4_domains.empty() && !ret.first.empty())
+                        {
+                            if (!update_dns_records(guest.second, ret.first, true))
+                                LOG(WARNING) << "Failed to update guest(vmid: " << guest.first << ") v4 dns records!";
+                        }
+
+                        if (!guest.second.ipv6_domains.empty() && ret.second.empty())
+                        {
+                            LOG(WARNING) << "Failed to get guest(vmid: " << guest.first << ") IPv6 address!";
+                            g_running = false;
+                        }
+                        else if (!guest.second.ipv6_domains.empty() && !ret.second.empty())
+                        {
+                            if (!update_dns_records(guest.second, ret.second, false))
+                                LOG(WARNING) << "Failed to update guest(vmid: " << guest.first << ") v6 dns records!";
+                        }
+                    }
                 }
                 else
                     std::this_thread::sleep_for(cfg._update_interval - elasped_time);
