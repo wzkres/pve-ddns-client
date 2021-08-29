@@ -7,24 +7,54 @@
 #include "glog/logging.h"
 #include "curl/curl.h"
 
-static size_t write_string_callback(const void * ptr, size_t size, size_t n, void * s)
+//typedef struct curl_read_userdata_
+//{
+//    const std::string & req_data;
+//    size_t pos;
+//} curl_read_userdata;
+
+static size_t write_string_callback(const void * bufptr, size_t size, size_t nitems, void * userp)
 {
-    if (nullptr == ptr || nullptr == s)
+    if (nullptr == bufptr || nullptr == userp)
     {
-        LOG(WARNING) << "Invalid curl write callback function params ptr and/or s!";
-        return n;
+        LOG(WARNING) << "Invalid curl write callback function params bufptr and/or userp!";
+        return nitems;
     }
-    if (size < 1 || n < 1)
+    if (size < 1 || nitems < 1)
     {
         LOG(WARNING) << "Invalid curl write callback function params, size is '" << size
-        << "', n is '" << n << "'!";
-        return n;
+        << "', nitems is '" << nitems << "'!";
+        return nitems;
     }
 
-    auto * str = reinterpret_cast<std::string *>(s);
-    str->append(reinterpret_cast<const char *>(ptr), size * n);
-    return n;
+    auto * str = reinterpret_cast<std::string *>(userp);
+    str->append(reinterpret_cast<const char *>(bufptr), size * nitems);
+    return nitems;
 }
+
+//static size_t read_string_callback(char * bufptr, size_t size, size_t nitems, void * userp)
+//{
+//    if (nullptr == bufptr || nullptr == userp)
+//    {
+//        LOG(WARNING) << "Invalid curl read callback function params bufptr and/pr userp!";
+//        return nitems;
+//    }
+//    if (size < 1 || nitems < 1)
+//    {
+//        LOG(WARNING) << "Invalid curl read callback function params, size is '" << size
+//        << "', nitems is '" << nitems << "'!";
+//        return nitems;
+//    }
+//
+//    auto * userdata = reinterpret_cast<curl_read_userdata *>(userp);
+//    if (userdata->pos >= userdata->req_data.length())
+//        return 0;
+//    auto bytes_left = static_cast<size_t>(userdata->req_data.length() - userdata->pos);
+//    auto bytes_to_copy = bytes_left < (size * nitems) ? bytes_left : (size * nitems);
+//    memcpy(bufptr, userdata->req_data.data() + userdata->pos, bytes_to_copy);
+//    userdata->pos += bytes_to_copy;
+//    return bytes_to_copy;
+//}
 
 bool str_iequals(const std::string & l, const std::string & r)
 {
@@ -202,17 +232,35 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
               const std::vector<std::string> & custom_headers,
               int & resp_code, std::string & resp_data)
 {
+    return http_req(url, req_data, timeout_ms, custom_headers, "", resp_code, resp_data);
+}
+
+bool http_req(const std::string & url, const std::string & req_data, long timeout_ms,
+              const std::vector<std::string> & custom_headers, const std::string & method,
+              int & resp_code, std::string & resp_data)
+{
     CURL * curl = curl_easy_init();
     if (nullptr == curl)
     {
         LOG(ERROR) << "Failed to curl_easy_init!";
         return false;
     }
+    curl_read_userdata read_userdata = { req_data, 0 };
     curl_easy_setopt(curl, CURLoption::CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLoption::CURLOPT_TIMEOUT_MS, timeout_ms);
     if (!req_data.empty())
     {
-        curl_easy_setopt(curl, CURLoption::CURLOPT_POST, 1L);
+        if (method == "put")
+        {
+            curl_easy_setopt(curl, CURLoption::CURLOPT_CUSTOMREQUEST, "PUT");
+//            curl_easy_setopt(curl, CURLoption::CURLOPT_UPLOAD, 1L);
+//            curl_easy_setopt(curl, CURLoption::CURLOPT_READFUNCTION, read_string_callback);
+//            curl_easy_setopt(curl, CURLoption::CURLOPT_READDATA, static_cast<void *>(&read_userdata));
+//            curl_easy_setopt(curl, CURLoption::CURLOPT_INFILESIZE_LARGE, req_data.length());
+        }
+        else
+            curl_easy_setopt(curl, CURLoption::CURLOPT_POST, 1L);
+
         curl_easy_setopt(curl, CURLoption::CURLOPT_POSTFIELDS, req_data.c_str());
         curl_easy_setopt(curl, CURLoption::CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(req_data.length()));
     }

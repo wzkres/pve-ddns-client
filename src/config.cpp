@@ -40,6 +40,11 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
         if (pa["token-uuid"])
             config._pve_api_token_uuid = pa["token-uuid"].as<std::string>();
     }
+    if (yaml_node["sync_host_static_v6_address"])
+    {
+        const auto val = yaml_node["sync_host_static_v6_address"].as<std::string>();
+        config._sync_host_static_v6_address = val == "true";
+    }
 }
 
 // Parse ddns config from yaml node
@@ -94,7 +99,7 @@ bool Config::loadConfig(const std::string & config_file)
         {
             LOG(INFO) << "Found host config!";
             parse_ddns_config(conf["host"], _host_config);
-            LOG(INFO) << "Host conf loaded, " << _host_config.ipv4_domains.size() << " ipv4 domain(s), "
+            LOG(INFO) << "Host config loaded, " << _host_config.ipv4_domains.size() << " ipv4 domain(s), "
                 << _host_config.ipv6_domains.size() << " ipv6 domain(s)!";
         }
         // Load each guest config if any

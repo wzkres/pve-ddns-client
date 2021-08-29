@@ -71,6 +71,8 @@ public:
     std::string _pve_api_token_id;
     std::string _pve_api_token_uuid;
 
+    bool _sync_host_static_v6_address = false;
+
     // Host config
     config_node _host_config;
     // Guest configs

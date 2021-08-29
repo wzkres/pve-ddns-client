@@ -348,6 +348,8 @@ static bool update_dns_records(const config_node & config_node, const std::strin
                         << ip << "' of domain '" << domain << "'!";
                 }
             }
+            else
+                LOG(INFO) << "IPv4 domain '" << domain << "' dns record address '" << ip << "' not changed.";
         }
     }
     else
@@ -379,8 +381,65 @@ static bool update_dns_records(const config_node & config_node, const std::strin
                         << ip << "' of domain '" << domain << "'!";
                 }
             }
+            else
+                LOG(INFO) << "IPv6 domain '" << domain << "' dns record address '" << ip << "' not changed.";
         }
     }
+
+    return true;
+}
+
+static bool sync_host_static_v6_address(const std::shared_ptr<PveApiClient> & pve_api_client,
+                                        const std::string & host_v6_addr, const std::string & guest_v6_addr)
+{
+    if (host_v6_addr.empty() || guest_v6_addr.empty())
+        return true;
+
+    int counter = 1;
+    auto host_4th_colon_pos = host_v6_addr.find(':');
+    while (host_4th_colon_pos != std::string::npos && counter < 4)
+    {
+        host_4th_colon_pos = host_v6_addr.find(':', host_4th_colon_pos + 1);
+        ++counter;
+    }
+    if (counter != 4)
+    {
+        LOG(WARNING) << "Invalid host v6 address '" << host_v6_addr << "'!";
+        return false;
+    }
+
+    const std::string host_1st_part = host_v6_addr.substr(0, host_4th_colon_pos);
+    const std::string host_2nd_part = host_v6_addr.substr(host_4th_colon_pos + 1);
+
+    counter = 1;
+    auto guest_4th_colon_pos = guest_v6_addr.find(':');
+    while (guest_4th_colon_pos != std::string::npos && counter < 4)
+    {
+        guest_4th_colon_pos = guest_v6_addr.find(':', guest_4th_colon_pos + 1);
+        ++counter;
+    }
+    if (counter != 4)
+    {
+        LOG(WARNING) << "Invalid guest v6 address '" << guest_v6_addr << "'!";
+        return false;
+    }
+
+    const std::string guest_1st_part = guest_v6_addr.substr(0, guest_4th_colon_pos);
+    if (host_1st_part == guest_1st_part)
+    {
+        LOG(INFO) << "No need to sync host v6 static address, 1st part '" << host_1st_part << "' not changed.";
+        return true;
+    }
+
+    const std::string new_host_v6_address = fmt::format("{}:{}", guest_1st_part, host_2nd_part);
+    LOG(INFO) << "Host v6 static address 1st part changed from '" << host_1st_part << "' to '"
+        << guest_1st_part << "', updating host static IPv6 address to '" << new_host_v6_address << "'...";
+
+    const auto & cfg = Config::getInstance();
+    if (!pve_api_client->setHostIpv6Address(cfg._host_config.node, cfg._host_config.iface, new_host_v6_address))
+        LOG(WARNING) << "Failed to update synced host static IPv6 address!";
+    else
+        LOG(INFO) << "Host static IPv6 address successfully updated.";
 
     return true;
 }
@@ -456,34 +515,35 @@ int main(int argc, char * argv[])
                     );
 
                     auto ret = pve_api_client->getHostIp(cfg._host_config.node, cfg._host_config.iface);
-                    if (ret.first.empty() && ret.second.empty())
+                    const std::string host_v6_addr = ret.second;
+                    if (!cfg._host_config.ipv4_domains.empty() && ret.first.empty())
                     {
-                        if (!cfg._host_config.ipv4_domains.empty() && ret.first.empty())
-                        {
-                            LOG(WARNING) << "Failed to get host IPv4 address!";
-                            g_running = false;
-                        }
-                        else if (!cfg._host_config.ipv4_domains.empty() && !ret.first.empty())
-                        {
-                            if (!update_dns_records(cfg._host_config, ret.first, true))
-                                LOG(WARNING) << "Failed to update host v4 dns records!";
-                        }
-
-                        if (!cfg._host_config.ipv6_domains.empty() && ret.second.empty())
-                        {
-                            LOG(WARNING) << "Failed to get host IPv6 address!";
-                            g_running = false;
-                        }
-                        else if (!cfg._host_config.ipv6_domains.empty() && !ret.second.empty())
-                        {
-                            if (!update_dns_records(cfg._host_config, ret.second, false))
-                                LOG(WARNING) << "Failed to update host v6 dns records!";
-                        }
+                        LOG(WARNING) << "Failed to get host IPv4 address!";
+                        g_running = false;
+                    }
+                    else if (!cfg._host_config.ipv4_domains.empty() && !ret.first.empty())
+                    {
+                        if (!update_dns_records(cfg._host_config, ret.first, true))
+                            LOG(WARNING) << "Failed to update host v4 dns records!";
                     }
 
+                    if (!cfg._host_config.ipv6_domains.empty() && ret.second.empty())
+                    {
+                        LOG(WARNING) << "Failed to get host IPv6 address!";
+                        g_running = false;
+                    }
+                    else if (!cfg._host_config.ipv6_domains.empty() && !ret.second.empty())
+                    {
+                        if (!update_dns_records(cfg._host_config, ret.second, false))
+                            LOG(WARNING) << "Failed to update host v6 dns records!";
+                    }
+
+                    std::string guest_v6_addr;
                     for (auto & guest : cfg._guest_configs)
                     {
                         ret = pve_api_client->getGuestIp(guest.second.node, guest.first, guest.second.iface);
+                        if (!ret.second.empty() && guest_v6_addr.empty())
+                            guest_v6_addr = ret.second;
                         if (!guest.second.ipv4_domains.empty() && ret.first.empty())
                         {
                             LOG(WARNING) << "Failed to get guest(vmid: " << guest.first << ") IPv4 address!";
@@ -506,6 +566,10 @@ int main(int argc, char * argv[])
                                 LOG(WARNING) << "Failed to update guest(vmid: " << guest.first << ") v6 dns records!";
                         }
                     }
+
+                    if (cfg._sync_host_static_v6_address)
+                        if (!sync_host_static_v6_address(pve_api_client, host_v6_addr, guest_v6_addr))
+                            LOG(WARNING) << "Failed to sync host static IPv6 address!";
                 }
                 else
                     std::this_thread::sleep_for(cfg._update_interval - elasped_time);

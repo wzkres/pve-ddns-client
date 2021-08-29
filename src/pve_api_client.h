@@ -15,6 +15,7 @@ public:
     std::pair<std::string, std::string> getGuestIp(const std::string & node,
                                                    int vmid,
                                                    const std::string & iface);
+    bool setHostIpv6Address(const std::string & node, const std::string & iface, const std::string & v6_ip);
 
 protected:
     bool req(const std::string & api_url, const std::string & req_data, int & resp_code, std::string & resp_data) const;

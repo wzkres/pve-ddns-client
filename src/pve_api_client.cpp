@@ -179,3 +179,39 @@ std::pair<std::string, std::string> PveApiClient::getGuestIp(const std::string &
 
     return { "", "" };
 }
+
+bool PveApiClient::setHostIpv6Address(const std::string & node, const std::string & iface, const std::string & v6_ip)
+{
+    const auto & config = Config::getInstance();
+
+    const std::string api_part = fmt::format(API_HOST_NETWORK, node, iface);
+    const std::string req_url = fmt::format("{}{}", config._pve_api_host, api_part);
+    const std::string req_body = fmt::format(R"(type=bridge&address6={}&netmask6=128)", v6_ip);
+
+    int resp_code = 0;
+    std::string resp_data;
+    std::vector<std::string> headers = { get_pve_api_http_auth_header() };
+    const bool ret = http_req(req_url, req_body, Config::getInstance()._http_timeout_ms, headers, "put",
+                              resp_code, resp_data);
+//    LOG(INFO) << "!!!" << resp_data;
+    if (!ret || 200 != resp_code)
+    {
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        return false;
+    }
+
+    rapidjson::Document d;
+    rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
+    if (!ok)
+    {
+        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
+        << "' (" << ok.Offset() << ")";
+        return false;
+    }
+
+    if (d.HasMember("data") && d["data"].IsObject())
+    {
+    }
+
+    return true;
+}
