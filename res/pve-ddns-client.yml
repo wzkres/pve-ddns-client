@@ -10,6 +10,7 @@ general:
     realm: pam
     token-id: ddns
     token-uuid: uuid
+  sync_host_static_v6_address: false
 host:
   node: node
   iface: vmbr0
