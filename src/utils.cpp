@@ -245,7 +245,7 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
         LOG(ERROR) << "Failed to curl_easy_init!";
         return false;
     }
-    curl_read_userdata read_userdata = { req_data, 0 };
+//    curl_read_userdata read_userdata = { req_data, 0 };
     curl_easy_setopt(curl, CURLoption::CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLoption::CURLOPT_TIMEOUT_MS, timeout_ms);
     if (!req_data.empty())
