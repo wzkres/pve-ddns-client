@@ -250,7 +250,7 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
     curl_easy_setopt(curl, CURLoption::CURLOPT_TIMEOUT_MS, timeout_ms);
     if (!req_data.empty())
     {
-        if (method == "put")
+        if ("put" == method)
         {
             curl_easy_setopt(curl, CURLoption::CURLOPT_CUSTOMREQUEST, "PUT");
 //            curl_easy_setopt(curl, CURLoption::CURLOPT_UPLOAD, 1L);
@@ -258,6 +258,8 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
 //            curl_easy_setopt(curl, CURLoption::CURLOPT_READDATA, static_cast<void *>(&read_userdata));
 //            curl_easy_setopt(curl, CURLoption::CURLOPT_INFILESIZE_LARGE, req_data.length());
         }
+        else if ("delete" == method)
+            curl_easy_setopt(curl, CURLoption::CURLOPT_CUSTOMREQUEST, "DELETE");
         else
             curl_easy_setopt(curl, CURLoption::CURLOPT_POST, 1L);
 

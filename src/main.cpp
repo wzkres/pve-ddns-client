@@ -390,7 +390,8 @@ static bool update_dns_records(const config_node & config_node, const std::strin
 }
 
 static bool sync_host_static_v6_address(const std::shared_ptr<PveApiClient> & pve_api_client,
-                                        const std::string & host_v6_addr, const std::string & guest_v6_addr)
+                                        const std::string & host_v4_addr, const std::string & host_v6_addr,
+                                        const std::string & guest_v6_addr)
 {
     if (host_v6_addr.empty() || guest_v6_addr.empty())
         return true;
@@ -439,10 +440,17 @@ static bool sync_host_static_v6_address(const std::shared_ptr<PveApiClient> & pv
     while(retry_count < 5)
     {
         const auto & cfg = Config::getInstance();
-        if (!pve_api_client->setHostIpv6Address(cfg._host_config.node, cfg._host_config.iface, new_host_v6_address))
+        if (!pve_api_client->setHostNetworkAddress(cfg._host_config.node, cfg._host_config.iface,
+                                                   host_v4_addr, new_host_v6_address))
         {
             LOG(WARNING) << "Failed to update synced host static IPv6 address, retry in 1 minute("
                 << retry_count << ")...";
+
+            if (!pve_api_client->revertHostNetworkChange(cfg._host_config.node))
+                LOG(WARNING) << "Failed to revert host network change!";
+            else
+                LOG(INFO) << "Host network change successfully reverted.";
+
             std::this_thread::sleep_for(std::chrono::minutes(1));
             ++retry_count;
             continue;
@@ -541,6 +549,7 @@ int main(int argc, char * argv[])
 
                     auto ret = pve_api_client->getHostIp(cfg._host_config.node, cfg._host_config.iface);
                     const std::string host_v6_addr = ret.second;
+                    const std::string host_v4_addr = ret.first;
                     if (!cfg._host_config.ipv4_domains.empty() && ret.first.empty())
                     {
                         LOG(WARNING) << "Failed to get host IPv4 address!";
@@ -593,7 +602,7 @@ int main(int argc, char * argv[])
                     }
 
                     if (cfg._sync_host_static_v6_address)
-                        if (!sync_host_static_v6_address(pve_api_client, host_v6_addr, guest_v6_addr))
+                        if (!sync_host_static_v6_address(pve_api_client, host_v4_addr, host_v6_addr, guest_v6_addr))
                             LOG(WARNING) << "Failed to sync host static IPv6 address!";
                 }
                 else

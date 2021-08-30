@@ -10,6 +10,7 @@
 
 static const char * API_VERSION = "api2/json/version";
 static const char * API_HOST_NETWORK = "api2/json/nodes/{}/network/{}";
+static const char * API_HOST_NETWORK_APPLY = "api2/json/nodes/{}/network";
 static const char * API_GUEST_NETWORK = "api2/json//nodes/{}/qemu/{}/agent/network-get-interfaces";
 
 static std::string get_pve_api_http_auth_header()
@@ -27,48 +28,6 @@ bool PveApiClient::init()
     if (!ret)
         LOG(WARNING) << "Failed to checkApiHost!";
     return ret;
-}
-
-bool PveApiClient::req(const std::string & api_url, const std::string & req_data,
-                       int & resp_code, std::string & resp_data) const
-{
-    std::vector<std::string> headers = { get_pve_api_http_auth_header() };
-    return http_req(api_url, req_data, Config::getInstance()._http_timeout_ms, headers, resp_code, resp_data);
-}
-
-bool PveApiClient::checkApiHost() const
-{
-    const auto & config = Config::getInstance();
-
-    const std::string req_url = fmt::format("{}{}", config._pve_api_host, API_VERSION);
-    int resp_code = 0;
-    std::string resp_data;
-    const bool ret = req(req_url, "", resp_code, resp_data);
-    if (!ret || 200 != resp_code)
-    {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
-        return ret;
-    }
-    rapidjson::Document d;
-    rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
-    if (!ok)
-    {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-            << "' (" << ok.Offset() << ")";
-        return false;
-    }
-
-    if (d.HasMember("data") && d["data"].IsObject())
-    {
-        const auto & data = d["data"];
-        if (data.HasMember("version") && data["version"].IsString())
-        {
-            LOG(INFO) << "Successfully got API version: " << data["version"].GetString();
-            return true;
-        }
-    }
-
-    return false;
 }
 
 std::pair<std::string, std::string> PveApiClient::getHostIp(const std::string & node, const std::string & iface)
@@ -180,13 +139,15 @@ std::pair<std::string, std::string> PveApiClient::getGuestIp(const std::string &
     return { "", "" };
 }
 
-bool PveApiClient::setHostIpv6Address(const std::string & node, const std::string & iface, const std::string & v6_ip)
+bool PveApiClient::setHostNetworkAddress(const std::string & node, const std::string & iface,
+                                         const std::string & v4_ip, const std::string & v6_ip)
 {
     const auto & config = Config::getInstance();
 
     const std::string api_part = fmt::format(API_HOST_NETWORK, node, iface);
     const std::string req_url = fmt::format("{}{}", config._pve_api_host, api_part);
-    const std::string req_body = fmt::format(R"(type=bridge&address6={}&netmask6=128)", v6_ip);
+    const std::string req_body = fmt::format(R"(type=bridge&address6={}&netmask6=128&address={}&netmask=24)",
+                                             v6_ip, v4_ip);
 
     int resp_code = 0;
     std::string resp_data;
@@ -214,4 +175,91 @@ bool PveApiClient::setHostIpv6Address(const std::string & node, const std::strin
     }
 
     return true;
+}
+
+bool PveApiClient::applyHostNetworkChange(const std::string & node)
+{
+    return reqHostNetwork("put", node);
+}
+
+bool PveApiClient::revertHostNetworkChange(const std::string & node)
+{
+    return reqHostNetwork("delete", node);
+}
+
+bool PveApiClient::req(const std::string & api_url, const std::string & req_data,
+                       int & resp_code, std::string & resp_data) const
+{
+    std::vector<std::string> headers = { get_pve_api_http_auth_header() };
+    return http_req(api_url, req_data, Config::getInstance()._http_timeout_ms, headers, resp_code, resp_data);
+}
+
+bool PveApiClient::reqHostNetwork(const std::string & method, const std::string & node) const
+{
+    const auto & config = Config::getInstance();
+
+    const std::string api_part = fmt::format(API_HOST_NETWORK_APPLY, node);
+    const std::string req_url = fmt::format("{}{}", config._pve_api_host, api_part);
+
+    int resp_code = 0;
+    std::string resp_data;
+    std::vector<std::string> headers = { get_pve_api_http_auth_header() };
+    const bool ret = http_req(req_url, "", Config::getInstance()._http_timeout_ms, headers, method,
+                              resp_code, resp_data);
+    //    LOG(INFO) << "!!!" << resp_data;
+    if (!ret || 200 != resp_code)
+    {
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        return false;
+    }
+
+    rapidjson::Document d;
+    rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
+    if (!ok)
+    {
+        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
+            << "' (" << ok.Offset() << ")";
+        return false;
+    }
+
+    if (d.HasMember("data") && d["data"].IsObject())
+    {
+    }
+
+    return true;
+}
+
+bool PveApiClient::checkApiHost() const
+{
+    const auto & config = Config::getInstance();
+
+    const std::string req_url = fmt::format("{}{}", config._pve_api_host, API_VERSION);
+    int resp_code = 0;
+    std::string resp_data;
+    const bool ret = req(req_url, "", resp_code, resp_data);
+    if (!ret || 200 != resp_code)
+    {
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        return ret;
+    }
+    rapidjson::Document d;
+    rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
+    if (!ok)
+    {
+        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
+            << "' (" << ok.Offset() << ")";
+        return false;
+    }
+
+    if (d.HasMember("data") && d["data"].IsObject())
+    {
+        const auto & data = d["data"];
+        if (data.HasMember("version") && data["version"].IsString())
+        {
+            LOG(INFO) << "Successfully got API version: " << data["version"].GetString();
+            return true;
+        }
+    }
+
+    return false;
 }
