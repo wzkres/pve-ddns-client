@@ -455,8 +455,23 @@ static bool sync_host_static_v6_address(const std::shared_ptr<PveApiClient> & pv
             ++retry_count;
             continue;
         }
-        else
-            LOG(INFO) << "Host static IPv6 address successfully updated.";
+
+        LOG(INFO) << "Host static IPv6 address successfully updated, applying change...";
+        if (!pve_api_client->applyHostNetworkChange(cfg._host_config.node))
+        {
+            LOG(WARNING) << "Failed to apply host network change, retry in 1 minute("
+                << retry_count << ")...";
+
+            if (!pve_api_client->revertHostNetworkChange(cfg._host_config.node))
+                LOG(WARNING) << "Failed to revert host network change!";
+            else
+                LOG(INFO) << "Host network change successfully reverted.";
+
+            std::this_thread::sleep_for(std::chrono::minutes(1));
+            ++retry_count;
+            continue;
+        }
+        LOG(INFO) << "Host network change successfully applied!";
 
         std::this_thread::sleep_for(std::chrono::seconds(10));
 

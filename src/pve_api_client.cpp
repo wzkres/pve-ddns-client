@@ -146,7 +146,7 @@ bool PveApiClient::setHostNetworkAddress(const std::string & node, const std::st
 
     const std::string api_part = fmt::format(API_HOST_NETWORK, node, iface);
     const std::string req_url = fmt::format("{}{}", config._pve_api_host, api_part);
-    const std::string req_body = fmt::format(R"(type=bridge&address6={}&netmask6=128&address={}&netmask=24)",
+    const std::string req_body = fmt::format(R"(type=bridge&address6={}&netmask6=128&address={}&netmask=255.255.255.0)",
                                              v6_ip, v4_ip);
 
     int resp_code = 0;
