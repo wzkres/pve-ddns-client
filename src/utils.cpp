@@ -266,6 +266,13 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
         curl_easy_setopt(curl, CURLoption::CURLOPT_POSTFIELDS, req_data.c_str());
         curl_easy_setopt(curl, CURLoption::CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(req_data.length()));
     }
+    else
+    {
+        if ("put" == method)
+            curl_easy_setopt(curl, CURLoption::CURLOPT_CUSTOMREQUEST, "PUT");
+        else if ("delete" == method)
+            curl_easy_setopt(curl, CURLoption::CURLOPT_CUSTOMREQUEST, "DELETE");
+    }
     curl_easy_setopt(curl, CURLoption::CURLOPT_WRITEFUNCTION, write_string_callback);
     curl_easy_setopt(curl, CURLoption::CURLOPT_WRITEDATA, static_cast<void *>(&resp_data));
 
