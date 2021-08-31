@@ -11,6 +11,12 @@ general:
     token-id: ddns
     token-uuid: uuid
   sync_host_static_v6_address: false
+client:
+  dns: porkbun
+  api-key: pk1_
+  api-secret: sk1_
+  ipv4: ["xxx.xxx.xxx", "aaa.xxx.xxx"]
+  ipv6: ["xxx.xxx.xxx", "bbb.xxx.xxx"]
 host:
   node: node
   iface: vmbr0
