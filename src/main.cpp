@@ -184,6 +184,11 @@ static void cleanup_dns_services()
 static bool init_dns_services()
 {
     const auto & cfg = Config::getInstance();
+    if (!cfg._client_config.dns_type.empty() &&
+        !cfg._client_config.api_key.empty() && !cfg._client_config.api_secret.empty())
+        if (!create_dns_service(cfg._client_config.dns_type, cfg._client_config.api_key, cfg._client_config.api_secret))
+            return false;
+
     if (!cfg._host_config.dns_type.empty() && !cfg._host_config.api_key.empty() && !cfg._host_config.api_secret.empty())
         if (!create_dns_service(cfg._host_config.dns_type, cfg._host_config.api_key, cfg._host_config.api_secret))
             return false;
@@ -272,13 +277,13 @@ static void init_dns_records()
 static bool update_dns_records(const config_node & config_node, const std::string & ip, const bool is_v4)
 {
     auto & cfg = Config::getInstance();
-    std::string dns_service_key = get_dns_service_key(cfg._host_config.dns_type,
-                                                      cfg._host_config.api_key,
-                                                      cfg._host_config.api_secret);
+    std::string dns_service_key = get_dns_service_key(config_node.dns_type,
+                                                      config_node.api_key,
+                                                      config_node.api_secret);
     auto * dns_service = get_dns_service(dns_service_key);
     if (nullptr == dns_service)
     {
-        LOG(WARNING) << "Failed to find dns service of '" << cfg._host_config.dns_type << "'!";
+        LOG(WARNING) << "Failed to find dns service of '" << config_node.dns_type << "'!";
         return false;
     }
 
