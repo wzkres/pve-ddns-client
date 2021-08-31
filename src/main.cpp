@@ -206,21 +206,21 @@ static bool init_dns_services()
     return true;
 }
 
-static void init_dns_records()
+static void init_node_dns_records(const config_node & node)
 {
-    auto & cfg = Config::getInstance();
-    std::string dns_service_key = get_dns_service_key(cfg._host_config.dns_type,
-                                                      cfg._host_config.api_key,
-                                                      cfg._host_config.api_secret);
-    auto * host_dns_service = get_dns_service(dns_service_key);
-    if (nullptr != host_dns_service)
+    Config & cfg = Config::getInstance();
+    const std::string dns_service_key = get_dns_service_key(node.dns_type,
+                                                            node.api_key,
+                                                            node.api_secret);
+    auto * dns_service = get_dns_service(dns_service_key);
+    if (nullptr != dns_service)
     {
-        for (const auto & domain : cfg._host_config.ipv4_domains)
+        for (const auto & domain : node.ipv4_domains)
         {
             auto found = cfg._ipv4_records.find(domain);
             if (cfg._ipv4_records.end() == found)
             {
-                std::string ip = host_dns_service->getIpv4(domain);
+                std::string ip = dns_service->getIpv4(domain);
                 LOG(INFO) << "Domain '" << domain << "', A record is: '" << ip << "'.";
                 cfg._ipv4_records.emplace(
                     domain,
@@ -235,12 +235,12 @@ static void init_dns_records()
             }
         }
 
-        for (const auto & domain : cfg._host_config.ipv6_domains)
+        for (const auto & domain : node.ipv6_domains)
         {
             auto found = cfg._ipv6_records.find(domain);
             if (cfg._ipv6_records.end() == found)
             {
-                std::string ip = host_dns_service->getIpv6(domain);
+                std::string ip = dns_service->getIpv6(domain);
                 LOG(INFO) << "Domain '" << domain << "', AAAA record is: '" << ip << "'.";
                 cfg._ipv6_records.emplace(
                     domain,
@@ -255,54 +255,17 @@ static void init_dns_records()
             }
         }
     }
+}
 
+static void init_dns_records()
+{
+    auto & cfg = Config::getInstance();
+    init_node_dns_records(cfg._client_config);
+    init_node_dns_records(cfg._host_config);
     for (auto & guest : cfg._guest_configs)
     {
         const auto & dns_config = guest.second;
-        dns_service_key = get_dns_service_key(dns_config.dns_type, dns_config.api_key, dns_config.api_secret);
-        auto * guest_dns_service = get_dns_service(dns_service_key);
-        if (nullptr != guest_dns_service)
-        {
-            for (const auto & domain : dns_config.ipv4_domains)
-            {
-                auto found = cfg._ipv4_records.find(domain);
-                if (cfg._ipv4_records.end() == found)
-                {
-                    std::string ip = guest_dns_service->getIpv4(domain);
-                    LOG(INFO) << "Domain '" << domain << "', A record is: '" << ip << "'.";
-                    cfg._ipv4_records.emplace(
-                        domain,
-                        dns_record_node
-                        {
-                            std::chrono::duration_cast<std::chrono::milliseconds>(
-                                std::chrono::system_clock::now().time_since_epoch()
-                            ),
-                            ip
-                        }
-                    );
-                }
-            }
-
-            for (const auto & domain : dns_config.ipv6_domains)
-            {
-                auto found = cfg._ipv6_records.find(domain);
-                if (cfg._ipv6_records.end() == found)
-                {
-                    std::string ip = guest_dns_service->getIpv6(domain);
-                    LOG(INFO) << "Domain '" << domain << "', AAAA record is: '" << ip << "'.";
-                    cfg._ipv6_records.emplace(
-                        domain,
-                        dns_record_node
-                        {
-                            std::chrono::duration_cast<std::chrono::milliseconds>(
-                                std::chrono::system_clock::now().time_since_epoch()
-                            ),
-                            ip
-                        }
-                    );
-                }
-            }
-        }
+        init_node_dns_records(guest.second);
     }
 }
 
@@ -561,6 +524,30 @@ int main(int argc, char * argv[])
                     cfg._last_update_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::system_clock::now().time_since_epoch()
                     );
+
+                    if (!cfg._client_config.ipv4_domains.empty())
+                    {
+                        cfg._my_public_ipv4 = g_ip_getter->getIpv4();
+                        if (cfg._my_public_ipv4.empty())
+                        {
+                            LOG(WARNING) << "Failed to get client IPv4 address!";
+                            g_running = false;
+                        }
+                        else if (!update_dns_records(cfg._client_config, cfg._my_public_ipv4, true))
+                            LOG(WARNING) << "Failed to update client v4 dns records!";
+                    }
+
+                    if (!cfg._client_config.ipv6_domains.empty())
+                    {
+                        cfg._my_public_ipv6 = g_ip_getter->getIpv6();
+                        if (cfg._my_public_ipv6.empty())
+                        {
+                            LOG(WARNING) << "Failed to get client IPv6 address!";
+                            g_running = false;
+                        }
+                        else if (!update_dns_records(cfg._client_config, cfg._my_public_ipv6, false))
+                            LOG(WARNING) << "Failed to update client v6 dns record!";
+                    }
 
                     auto ret = pve_api_client->getHostIp(cfg._host_config.node, cfg._host_config.iface);
                     const std::string host_v6_addr = ret.second;

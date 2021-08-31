@@ -73,6 +73,8 @@ public:
 
     bool _sync_host_static_v6_address = false;
 
+    // Client config
+    config_node  _client_config;
     // Host config
     config_node _host_config;
     // Guest configs

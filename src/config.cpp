@@ -81,6 +81,7 @@ bool Config::loadConfig(const std::string & config_file)
     {
         YAML::Node conf = YAML::LoadFile(config_file);
         // Reset current loaded configs first
+        _client_config = {};
         _host_config = {};
         _guest_configs.clear();
         // Mandatory general node
@@ -93,6 +94,14 @@ bool Config::loadConfig(const std::string & config_file)
         {
             LOG(WARNING) << "General config not found!";
             return conf_valid;
+        }
+        // Load client config if specified
+        if (conf["client"])
+        {
+            LOG(INFO) << "Found client config!";
+            parse_ddns_config(conf["client"], _client_config);
+            LOG(INFO) << "Client config loaded, " << _client_config.ipv4_domains.size() << " ipv4 domain(s), "
+                << _client_config.ipv6_domains.size() << " ipv6 domain(s)!";
         }
         // Load host config if specified
         if (conf["host"])
