@@ -87,6 +87,6 @@ jobs:
       with:
         name: ${{ runner.os }}-artifact
         path: |
-          ${{github.workspace}}/build/pve-ddns-client.exe
-          ${{github.workspace}}/build/*.yml
+          ${{github.workspace}}\build\${{env.BUILD_TYPE}}\pve-ddns-client.exe
+          ${{github.workspace}}build\*.yml
       if: runner.os == 'Windows'
