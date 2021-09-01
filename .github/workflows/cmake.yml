@@ -18,7 +18,7 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     strategy:
       matrix:
-        platform: [ubuntu-18.04, macos-latest]
+        platform: [ubuntu-18.04, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -26,20 +26,36 @@ jobs:
       with:
         submodules: recursive
     
-    - name: Check 3rdparty prebuilt cache
-      id: cache
+    - name: Check 3rdparty prebuilt cache (Linux & macOS)
+      id: cache-nix
       uses: actions/cache@v2
       with:
         path: 3rdparty/prebuilt
         key: ${{ runner.os }}-${{ matrix.platform }}-build-${{ hashFiles('3rdparty/build.sh') }}
+      if: runner.os == 'Linux' || runner.os == 'macOS'
     
-    - name: Prebuild 3rdparty libs
+    - name: Check 3rdparty prebuilt cache (Windows)
+      id: cache-win
+      uses: actions/cache@v2
+      with:
+        path: 3rdparty/prebuilt
+        key: ${{ runner.os }}-${{ matrix.platform }}-build-${{ hashFiles('3rdparty/build.bat') }}
+      if: runner.os == 'Windows'
+    
+    - name: Prebuild 3rdparty libs (Linux & macOS)
       run: |
         # make file runnable, might not be necessary
         chmod +x "${GITHUB_WORKSPACE}/3rdparty/build.sh"
         # run script
         "${GITHUB_WORKSPACE}/3rdparty/build.sh"
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: (runner.os == 'Linux' || runner.os == 'macOS') && steps.cache-nix.outputs.cache-hit != 'true'
+      
+    - name: Prebuild 3rdparty libs (Windows)
+      run: |
+        cd "${GITHUB_WORKSPACE}/3rdparty/"
+        # run script
+        "${GITHUB_WORKSPACE}/3rdparty/build.bat"
+      if: runner.os == 'Windows' && steps.cache-win.outputs.cache-hit != 'true'
     
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -57,10 +73,20 @@ jobs:
       #run: ctest -C ${{env.BUILD_TYPE}}
     #  run: pve-ddns-client
     
-    - name: Upload artifact
+    - name: Upload artifact (Linux & macOS)
       uses: actions/upload-artifact@v2
       with:
         name: ${{ runner.os }}-artifact
         path: |
           ${{github.workspace}}/build/pve-ddns-client
           ${{github.workspace}}/build/*.yml
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+
+    - name: Upload artifact (Windows)
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ runner.os }}-artifact
+        path: |
+          ${{github.workspace}}/build/pve-ddns-client.exe
+          ${{github.workspace}}/build/*.yml
+      if: runner.os == 'Windows'
