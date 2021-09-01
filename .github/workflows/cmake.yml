@@ -51,7 +51,9 @@ jobs:
       if: (runner.os == 'Linux' || runner.os == 'macOS') && steps.cache-nix.outputs.cache-hit != 'true'
       
     - name: Prebuild 3rdparty libs (Windows)
-      run: .\build.bat
+      run: |
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        .\build.bat
       working-directory: .\3rdparty
       if: runner.os == 'Windows' && steps.cache-win.outputs.cache-hit != 'true'
     
