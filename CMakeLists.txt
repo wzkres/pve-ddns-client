@@ -39,7 +39,9 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib64)
 endif()
 target_link_directories(${PROJECT_NAME} PRIVATE ${LINK_DIRS})
 if(WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE libcurl-d glogd yaml-cppd wldap32 crypt32 Ws2_32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE libcurl glog yaml-cpp wldap32 crypt32 Ws2_32)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 elseif(APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto z pthread dl
                                                   ${LIB_FOUNDATION} ${LIB_SYSTEMCONFIGURATION})
