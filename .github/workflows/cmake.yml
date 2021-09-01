@@ -52,9 +52,9 @@ jobs:
       
     - name: Prebuild 3rdparty libs (Windows)
       run: |
-        cd "${GITHUB_WORKSPACE}/3rdparty/"
+        cd "$env:GITHUB_WORKSPACE/3rdparty/"
         # run script
-        "${GITHUB_WORKSPACE}/3rdparty/build.bat"
+        "$env:GITHUB_WORKSPACE/3rdparty/build.bat"
       if: runner.os == 'Windows' && steps.cache-win.outputs.cache-hit != 'true'
     
     - name: Configure CMake
