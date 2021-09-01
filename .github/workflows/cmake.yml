@@ -51,10 +51,8 @@ jobs:
       if: (runner.os == 'Linux' || runner.os == 'macOS') && steps.cache-nix.outputs.cache-hit != 'true'
       
     - name: Prebuild 3rdparty libs (Windows)
-      run: |
-        cd "$env:GITHUB_WORKSPACE/3rdparty/"
-        # run script
-        "$env:GITHUB_WORKSPACE/3rdparty/build.bat"
+      run: .\3rdparty\build.bat
+      working-directory: .\3rdparty
       if: runner.os == 'Windows' && steps.cache-win.outputs.cache-hit != 'true'
     
     - name: Configure CMake
