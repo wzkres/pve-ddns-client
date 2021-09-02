@@ -1,0 +1,14 @@
+path_classifiers:
+  library:
+    - exclude: ./3rdparty
+extraction:
+  cpp:
+    configure:
+      command:
+        - cd 3rdparty
+        - ./build.sh
+        - cd ..
+        - cmake -B ./build -DCMAKE_BUILD_TYPE=Release
+    index:
+      build_command:
+        - cmake --build ./build --config Release
