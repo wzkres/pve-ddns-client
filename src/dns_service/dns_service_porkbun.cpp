@@ -68,16 +68,17 @@ std::string DnsServicePorkbun::getIp(const std::string & domain, bool is_v4)
     const bool ret = http_req(req_url, req_body, Config::getInstance()._http_timeout_ms, {}, resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
+                     << resp_data << "!";
         return "";
     }
-//    LOG(INFO) << resp_data;
+
     rapidjson::Document d;
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
         LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-        << "' (" << ok.Offset() << ")";
+                     << "' (" << ok.Offset() << ")";
         return "";
     }
 
@@ -108,16 +109,17 @@ bool DnsServicePorkbun::setIp(const std::string & domain, const std::string & ip
     const bool ret = http_req(req_url, req_body, Config::getInstance()._http_timeout_ms, {}, resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
+                     << resp_data << "!";
         return false;
     }
-//    LOG(INFO) << resp_data;
+
     rapidjson::Document d;
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
         LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-        << "' (" << ok.Offset() << ")";
+                     << "' (" << ok.Offset() << ")";
         return false;
     }
 
@@ -125,9 +127,7 @@ bool DnsServicePorkbun::setIp(const std::string & domain, const std::string & ip
     {
         const std::string status_str = d["status"].GetString();
         if ("SUCCESS" == status_str)
-        {
             return true;
-        }
     }
 
     return false;

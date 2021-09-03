@@ -61,7 +61,8 @@ std::string PublicIpGetterPorkbun::getIp(const std::string & api_host) const
     const bool ret = http_req(req_url, req_body, Config::getInstance()._http_timeout_ms, {}, resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
+                     << resp_data << "!";
         return "";
     }
     rapidjson::Document d;

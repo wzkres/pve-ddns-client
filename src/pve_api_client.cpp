@@ -42,7 +42,8 @@ std::pair<std::string, std::string> PveApiClient::getHostIp(const std::string & 
     const bool ret = req(req_url, "", resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
+                     << resp_data << "!";
         return { "", "" };
     }
 
@@ -84,10 +85,10 @@ std::pair<std::string, std::string> PveApiClient::getGuestIp(const std::string &
     const bool ret = req(req_url, "", resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
+                     << resp_data << "!";
         return { "", "" };
     }
-//    LOG(INFO) << "!! " << resp_data;
 
     rapidjson::Document d;
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
@@ -154,10 +155,10 @@ bool PveApiClient::setHostNetworkAddress(const std::string & node, const std::st
     std::vector<std::string> headers = { get_pve_api_http_auth_header() };
     const bool ret = http_req(req_url, req_body, Config::getInstance()._http_timeout_ms, headers, "put",
                               resp_code, resp_data);
-//    LOG(INFO) << "!!!" << resp_data;
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
+                     << resp_data << "!";
         return false;
     }
 
@@ -166,7 +167,7 @@ bool PveApiClient::setHostNetworkAddress(const std::string & node, const std::st
     if (!ok)
     {
         LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-        << "' (" << ok.Offset() << ")";
+                     << "' (" << ok.Offset() << ")";
         return false;
     }
 
@@ -206,10 +207,10 @@ bool PveApiClient::reqHostNetwork(const std::string & method, const std::string 
     std::vector<std::string> headers = { get_pve_api_http_auth_header() };
     const bool ret = http_req(req_url, "", Config::getInstance()._http_timeout_ms, headers, method,
                               resp_code, resp_data);
-    //    LOG(INFO) << "!!!" << resp_data;
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
+                     << resp_data << "!";
         return false;
     }
 
@@ -239,9 +240,11 @@ bool PveApiClient::checkApiHost() const
     const bool ret = req(req_url, "", resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << "!";
+        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
+                     << resp_data << "!";
         return ret;
     }
+
     rapidjson::Document d;
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
