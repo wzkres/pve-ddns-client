@@ -8,9 +8,8 @@
 bool str_iequals(const std::string & l, const std::string & r);
 // Get root and sub-domain from given domain name (www.domain.com => domain.com, www)
 std::pair<std::string, std::string> get_sub_domain(const std::string & domain);
-// Get DNS service key, current implementation is just colon joined all 3 parameters
-std::string get_dns_service_key(const std::string & dns_type,
-                                const std::string & api_key, const std::string & api_secret);
+// Get DNS service key from type, api key and secret
+size_t get_dns_service_key(const std::string & dns_type, const std::string & api_key, const std::string & api_secret);
 // Check if given IP is v4 address
 bool is_ipv4(const std::string & s);
 // Check if given string is hex string

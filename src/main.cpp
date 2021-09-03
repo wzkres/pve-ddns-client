@@ -22,7 +22,7 @@
 // Running flag
 static volatile bool g_running = true;
 static IPublicIpGetter * g_ip_getter = nullptr;
-static std::unordered_map<std::string, IDnsService *> g_dns_services;
+static std::unordered_map<size_t , IDnsService *> g_dns_services;
 
 #ifdef WIN32
 static BOOL WINAPI ctrl_handler(DWORD fdw_ctrl_type)
@@ -141,7 +141,7 @@ static void cleanup_public_ip_getter()
         PublicIpGetterFactory::destroy(g_ip_getter);
 }
 
-static IDnsService * get_dns_service(const std::string & service_key)
+static IDnsService * get_dns_service(const size_t service_key)
 {
     auto it = g_dns_services.find(service_key);
     if (g_dns_services.end() == it)
@@ -153,7 +153,7 @@ static bool create_dns_service(const std::string & dns_type,
                                const std::string & api_key,
                                const std::string & api_secret)
 {
-    const std::string key = get_dns_service_key(dns_type, api_key, api_secret);
+    const size_t key = get_dns_service_key(dns_type, api_key, api_secret);
     if (g_dns_services.find(key) == g_dns_services.end())
     {
         IDnsService * dns_service = DnsServiceFactory::create(dns_type);
@@ -214,9 +214,7 @@ static bool init_dns_services()
 static void init_node_dns_records(const config_node & node)
 {
     Config & cfg = Config::getInstance();
-    const std::string dns_service_key = get_dns_service_key(node.dns_type,
-                                                            node.api_key,
-                                                            node.api_secret);
+    const size_t dns_service_key = get_dns_service_key(node.dns_type, node.api_key, node.api_secret);
     auto * dns_service = get_dns_service(dns_service_key);
     if (nullptr != dns_service)
     {
@@ -277,9 +275,7 @@ static void init_dns_records()
 static bool update_dns_records(const config_node & config_node, const std::string & ip, const bool is_v4)
 {
     auto & cfg = Config::getInstance();
-    std::string dns_service_key = get_dns_service_key(config_node.dns_type,
-                                                      config_node.api_key,
-                                                      config_node.api_secret);
+    size_t dns_service_key = get_dns_service_key(config_node.dns_type, config_node.api_key, config_node.api_secret);
     auto * dns_service = get_dns_service(dns_service_key);
     if (nullptr == dns_service)
     {
