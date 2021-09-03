@@ -544,10 +544,7 @@ int main(int argc, char * argv[])
                     {
                         cfg._my_public_ipv4 = g_ip_getter->getIpv4();
                         if (cfg._my_public_ipv4.empty())
-                        {
-                            LOG(WARNING) << "Failed to get client IPv4 address!";
-                            g_running = false;
-                        }
+                            LOG(WARNING) << "Failed to get client public IPv4 address!";
                         else if (!update_dns_records(cfg._client_config, cfg._my_public_ipv4, true))
                             LOG(WARNING) << "Failed to update client v4 dns records!";
                     }
@@ -556,10 +553,7 @@ int main(int argc, char * argv[])
                     {
                         cfg._my_public_ipv6 = g_ip_getter->getIpv6();
                         if (cfg._my_public_ipv6.empty())
-                        {
-                            LOG(WARNING) << "Failed to get client IPv6 address!";
-                            g_running = false;
-                        }
+                            LOG(WARNING) << "Failed to get client public IPv6 address!";
                         else if (!update_dns_records(cfg._client_config, cfg._my_public_ipv6, false))
                             LOG(WARNING) << "Failed to update client v6 dns record!";
                     }
