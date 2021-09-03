@@ -19,26 +19,28 @@
 #include "dns_service/dns_service.h"
 #include "pve_api_client.h"
 
-// Running flag
+// Main loop running flag
 static volatile bool g_running = true;
-static IPublicIpGetter * g_ip_getter = nullptr;
-static std::unordered_map<size_t , IDnsService *> g_dns_services;
+// Public IP getter service instance
+static std::shared_ptr<IPublicIpGetter> g_ip_getter;
+// DNS service instances
+static std::shared_ptr<std::unordered_map<size_t, IDnsService *>> g_dns_services;
 
-#ifdef WIN32
-static BOOL WINAPI ctrl_handler(DWORD fdw_ctrl_type)
-{
-    if (CTRL_C_EVENT == fdw_ctrl_type)
-    {
-        LOG(INFO) << "Received ctrl+c event, stopping...";
-        g_running = false;
-        return TRUE;
-    }
-
-    LOG(WARNING) << "Received ctrl event: " << fdw_ctrl_type << ", ignored!";
-    return FALSE;
-}
-#else
-#endif
+//#ifdef WIN32
+//static BOOL WINAPI ctrl_handler(DWORD fdw_ctrl_type)
+//{
+//    if (CTRL_C_EVENT == fdw_ctrl_type)
+//    {
+//        LOG(INFO) << "Received ctrl+c event, stopping...";
+//        g_running = false;
+//        return TRUE;
+//    }
+//
+//    LOG(WARNING) << "Received ctrl event: " << fdw_ctrl_type << ", ignored!";
+//    return FALSE;
+//}
+//#else
+//#endif
 
 // Command line params handling
 static bool parse_cmd(int argc, char * argv[])
@@ -116,19 +118,25 @@ static bool init_public_ip_getter()
     }
 
     auto & cfg = Config::getInstance();
-    g_ip_getter = PublicIpGetterFactory::create(cfg._public_ip_service);
-    if (nullptr == g_ip_getter)
+    auto * ip_getter = PublicIpGetterFactory::create(cfg._public_ip_service);
+    if (nullptr == ip_getter)
     {
-        LOG(WARNING) << "Failed to create public ip getter " << PUBLIC_IP_GETTER_PORKBUN << "!";
+        LOG(WARNING) << "Failed to create public ip getter " << cfg._public_ip_service << "!";
         return false;
     }
+    g_ip_getter = std::shared_ptr<IPublicIpGetter>(ip_getter, [](IPublicIpGetter * ip_getter)
+    {
+        if (nullptr == ip_getter)
+            return;
+        PublicIpGetterFactory::destroy(ip_getter);
+    });
     if (!g_ip_getter->setCredentials(cfg._public_ip_credentials))
     {
-        LOG(WARNING) << "Failed to setCredentials!";
-        PublicIpGetterFactory::destroy(g_ip_getter);
+        LOG(WARNING) << "Failed to setCredentials to ip getter " << cfg._public_ip_service << "!";
+        g_ip_getter.reset();
         return false;
     }
-
+    // Initial retrieval of public IPv4 and IPv6 addresses;
     cfg._my_public_ipv4 = g_ip_getter->getIpv4();
     cfg._my_public_ipv6 = g_ip_getter->getIpv6();
 
@@ -137,14 +145,19 @@ static bool init_public_ip_getter()
 
 static void cleanup_public_ip_getter()
 {
-    if (nullptr != g_ip_getter)
-        PublicIpGetterFactory::destroy(g_ip_getter);
+    g_ip_getter.reset();
 }
 
 static IDnsService * get_dns_service(const size_t service_key)
 {
-    auto it = g_dns_services.find(service_key);
-    if (g_dns_services.end() == it)
+    if (nullptr == g_dns_services)
+    {
+        LOG(WARNING) << "Invalid g_dns_services!";
+        return nullptr;
+    }
+
+    auto it = g_dns_services->find(service_key);
+    if (g_dns_services->end() == it)
         return nullptr;
     return it->second;
 }
@@ -153,8 +166,14 @@ static bool create_dns_service(const std::string & dns_type,
                                const std::string & api_key,
                                const std::string & api_secret)
 {
+    if (nullptr == g_dns_services)
+    {
+        LOG(WARNING) << "Invalid g_dns_services!";
+        return false;
+    }
+
     const size_t key = get_dns_service_key(dns_type, api_key, api_secret);
-    if (g_dns_services.find(key) == g_dns_services.end())
+    if (g_dns_services->find(key) == g_dns_services->end())
     {
         IDnsService * dns_service = DnsServiceFactory::create(dns_type);
         if (nullptr == dns_service)
@@ -168,7 +187,7 @@ static bool create_dns_service(const std::string & dns_type,
             DnsServiceFactory::destroy(dns_service);
             return false;
         }
-        g_dns_services.emplace(key, dns_service);
+        g_dns_services->emplace(key, dns_service);
     }
 
     return true;
@@ -176,9 +195,15 @@ static bool create_dns_service(const std::string & dns_type,
 
 static void cleanup_dns_services()
 {
-    for (auto & kv : g_dns_services)
+    if (nullptr == g_dns_services)
+    {
+        LOG(WARNING) << "Invalid g_dns_services!";
+        return;
+    }
+
+    for (auto & kv : *g_dns_services)
         DnsServiceFactory::destroy(kv.second);
-    g_dns_services.clear();
+    g_dns_services->clear();
 }
 
 static bool init_dns_services()
@@ -492,6 +517,7 @@ int main(int argc, char * argv[])
 
         do
         {
+            g_dns_services = std::make_shared<std::unordered_map<size_t, IDnsService *>>();
             if (!init_public_ip_getter())
             {
                 LOG(WARNING) << "Failed to init public ip!";

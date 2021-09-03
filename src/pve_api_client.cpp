@@ -51,7 +51,7 @@ std::pair<std::string, std::string> PveApiClient::getHostIp(const std::string & 
     if (!ok)
     {
         LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-        << "' (" << ok.Offset() << ")";
+                     << "' (" << ok.Offset() << ")";
         return { "", "" };
     }
 
@@ -94,7 +94,7 @@ std::pair<std::string, std::string> PveApiClient::getGuestIp(const std::string &
     if (!ok)
     {
         LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-        << "' (" << ok.Offset() << ")";
+                     << "' (" << ok.Offset() << ")";
         return { "", "" };
     }
 
@@ -218,7 +218,7 @@ bool PveApiClient::reqHostNetwork(const std::string & method, const std::string 
     if (!ok)
     {
         LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-            << "' (" << ok.Offset() << ")";
+                     << "' (" << ok.Offset() << ")";
         return false;
     }
 
@@ -247,7 +247,7 @@ bool PveApiClient::checkApiHost() const
     if (!ok)
     {
         LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-            << "' (" << ok.Offset() << ")";
+                     << "' (" << ok.Offset() << ")";
         return false;
     }
 
