@@ -35,10 +35,9 @@ void PublicIpGetterFactory::destroy(IPublicIpGetter * ip_getter)
     if (str_iequals(name, PUBLIC_IP_GETTER_PORKBUN))
     {
         auto * g = dynamic_cast<PublicIpGetterPorkbun *>(ip_getter);
-        if (nullptr != g)
-            delete g;
-        else
+        if (nullptr == g)
             LOG(WARNING) << "ip_getter is not instance of PublicIpGetterPorkbun!";
+        delete g;
     }
     else
         LOG(WARNING) << "Unsupported public ip getter '" << name << "'!";

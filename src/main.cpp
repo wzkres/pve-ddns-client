@@ -68,7 +68,13 @@ static bool parse_cmd(int argc, char * argv[])
     {
         if (p.exist("version"))
         {
-            std::cout << "Ver 0.0.1" << std::endl;
+            std::cout << "Ver "
+#if defined(PVE_DDNS_CLIENT_VER)
+                      << PVE_DDNS_CLIENT_VER
+#else
+                      << "dev"
+#endif
+                      << std::endl;
             ret = false;
         }
         else if (p.exist("help"))

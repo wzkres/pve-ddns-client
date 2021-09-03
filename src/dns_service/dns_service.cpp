@@ -35,10 +35,9 @@ void DnsServiceFactory::destroy(IDnsService * dns_service)
     if (str_iequals(name, DNS_SERVICE_PORKBUN))
     {
         auto * g = dynamic_cast<DnsServicePorkbun *>(dns_service);
-        if (nullptr != g)
-            delete g;
-        else
+        if (nullptr == g)
             LOG(WARNING) << "dns_service is not instance of DnsServicePorkbun!";
+        delete g;
     }
     else
         LOG(WARNING) << "Unsupported dns service '" << name << "'!";
