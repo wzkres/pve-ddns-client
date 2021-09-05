@@ -3,6 +3,7 @@
 
 #include "public_ip_getter.h"
 
+/// Public IP getter using Porkbun APIs
 class PublicIpGetterPorkbun : public IPublicIpGetter
 {
 public:
@@ -15,8 +16,11 @@ protected:
     std::string getIp(const std::string & api_host) const;
 
 private:
+    /// Service name
     std::string _service_name = PUBLIC_IP_GETTER_PORKBUN;
+    /// Porkbun API key
     std::string _api_key;
+    /// Porkbun secret key
     std::string _api_secret;
 };
 

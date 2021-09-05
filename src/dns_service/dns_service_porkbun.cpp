@@ -53,7 +53,7 @@ bool DnsServicePorkbun::setIpv4(const std::string & domain, const std::string & 
 
 bool DnsServicePorkbun::setIpv6(const std::string & domain, const std::string & ip)
 {
-    return setIp(domain, ip, false);;
+    return setIp(domain, ip, false);
 }
 
 std::string DnsServicePorkbun::getIp(const std::string & domain, bool is_v4)

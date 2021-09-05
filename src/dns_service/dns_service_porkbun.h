@@ -3,6 +3,7 @@
 
 #include "dns_service.h"
 
+/// Porkbun DNS service implementation
 class DnsServicePorkbun : public IDnsService
 {
 public:
@@ -18,8 +19,11 @@ protected:
     bool setIp(const std::string & domain, const std::string & ip, bool is_v4);
 
 private:
+    /// Service name
     std::string _service_name = DNS_SERVICE_PORKBUN;
+    /// Porkbun API key
     std::string _api_key;
+    /// Porkbun secret key
     std::string _api_secret;
 };
 
