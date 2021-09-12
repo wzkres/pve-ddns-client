@@ -5,6 +5,7 @@
 
 /// Public IP getter implementations
 constexpr const char * PUBLIC_IP_GETTER_PORKBUN = "porkbun";
+constexpr const char * PUBLIC_IP_GETTER_IPIFY = "ipify";
 
 /// Public IP getter interface
 class IPublicIpGetter
