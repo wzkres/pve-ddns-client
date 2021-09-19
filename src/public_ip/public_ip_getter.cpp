@@ -8,6 +8,12 @@
 
 IPublicIpGetter * PublicIpGetterFactory::create(const std::string & service_name)
 {
+    if (service_name.empty())
+    {
+        LOG(WARNING) << "Invalid service_name!";
+        return nullptr;
+    }
+
     if (str_iequals(service_name, PUBLIC_IP_GETTER_PORKBUN))
     {
         auto * getter = new(std::nothrow) PublicIpGetterPorkbun();

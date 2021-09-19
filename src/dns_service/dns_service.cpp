@@ -4,21 +4,39 @@
 
 #include "../utils.h"
 #include "dns_service_porkbun.h"
+#include "dns_service_dnspod.h"
 
 IDnsService * DnsServiceFactory::create(const std::string & service_name)
 {
+    if (service_name.empty())
+    {
+        LOG(WARNING) << "Invalid service_name!";
+        return nullptr;
+    }
+
     if (str_iequals(service_name, DNS_SERVICE_PORKBUN))
     {
-        auto * getter = new(std::nothrow) DnsServicePorkbun();
-        if (nullptr == getter)
+        auto * service = new(std::nothrow) DnsServicePorkbun();
+        if (nullptr == service)
         {
             LOG(ERROR) << "Failed to instantiate DnsServicePorkbun!";
             return nullptr;
         }
-        return getter;
+        return service;
     }
-    else
-        LOG(WARNING) << "Unsupported dns service '" << service_name << "'!";
+
+    if (str_iequals(service_name, DNS_SERVICE_DNSPOD))
+    {
+        auto * service = new(std::nothrow) DnsServiceDnspod();
+        if (nullptr == service)
+        {
+            LOG(ERROR) << "Failed to instantiate DnsServiceDnspod!";
+            return nullptr;
+        }
+        return service;
+    }
+
+    LOG(WARNING) << "Unsupported dns service '" << service_name << "'!";
 
     return nullptr;
 }
@@ -37,6 +55,13 @@ void DnsServiceFactory::destroy(IDnsService * dns_service)
         auto * g = dynamic_cast<DnsServicePorkbun *>(dns_service);
         if (nullptr == g)
             LOG(WARNING) << "dns_service is not instance of DnsServicePorkbun!";
+        delete g;
+    }
+    else if (str_iequals(name, DNS_SERVICE_DNSPOD))
+    {
+        auto * g = dynamic_cast<DnsServiceDnspod *>(dns_service);
+        if (nullptr == g)
+            LOG(WARNING) << "dns_service is not instance of DnsServiceDnspod!";
         delete g;
     }
     else
