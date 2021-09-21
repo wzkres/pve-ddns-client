@@ -58,6 +58,12 @@ bool DnsServicePorkbun::setIpv6(const std::string & domain, const std::string & 
 
 std::string DnsServicePorkbun::getIp(const std::string & domain, bool is_v4)
 {
+    if (domain.empty())
+    {
+        LOG(WARNING) << "Invalid param!";
+        return "";
+    }
+
     const auto sub_domain = get_sub_domain(domain);
     const std::string api_part = fmt::format(API_RETRIEVE, sub_domain.first, is_v4 ? "A" : "AAAA", sub_domain.second);
     const std::string req_url = fmt::format("{}{}", API_HOST, api_part);
@@ -98,6 +104,12 @@ std::string DnsServicePorkbun::getIp(const std::string & domain, bool is_v4)
 
 bool DnsServicePorkbun::setIp(const std::string & domain, const std::string & ip, bool is_v4)
 {
+    if (domain.empty() || ip.empty())
+    {
+        LOG(WARNING) << "Invalid params, domain '" << domain << "', ip '" << ip << "'!";
+        return false;
+    }
+
     const auto sub_domain = get_sub_domain(domain);
     const std::string api_part = fmt::format(API_EDIT, sub_domain.first, is_v4 ? "A" : "AAAA", sub_domain.second);
     const std::string req_url = fmt::format("{}{}", API_HOST, api_part);
