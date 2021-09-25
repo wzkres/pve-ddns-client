@@ -13,6 +13,15 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
     }
     if (yaml_node["log-overdue-days"])
         config._log_overdue_days = yaml_node["log-overdue-days"].as<int>();
+    if (yaml_node["log-buf-secs"])
+        config._log_buf_secs = yaml_node["log-buf-secs"].as<int>();
+    if (yaml_node["max-log-size-mb"])
+        config._max_log_size_mb = yaml_node["max-log-size-mb"].as<int>();
+    if (yaml_node["service-mode"])
+    {
+        const auto val = yaml_node["service-mode"].as<std::string>();
+        config._service_mode = val == "true";
+    }
     if (yaml_node["public-ip"])
     {
         const auto & pi = yaml_node["public-ip"];

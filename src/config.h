@@ -59,6 +59,12 @@ public:
     std::chrono::milliseconds _update_interval = std::chrono::milliseconds(300000);
     // Log cleaner keep days
     int _log_overdue_days = 3;
+    // Default realtime logging output
+    int _log_buf_secs = 0;
+    // Max size in MB per log file
+    int _max_log_size_mb = 2;
+    // Long-running service mode
+    bool _service_mode = true;
 
     // Public IP service related
     std::string _public_ip_service;

@@ -209,7 +209,6 @@ bool DnsServiceDnspod::setIp(const std::string & domain, const std::string & ip,
         return "";
     }
 
-    LOG(INFO) << "!!! " << resp_data;
     rapidjson::Document d;
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)

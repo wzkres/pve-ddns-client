@@ -518,8 +518,10 @@ int main(int argc, char * argv[])
     const bool cfg_valid = cfg.loadConfig(cfg._yml_path);
     if (cfg_valid)
     {
-        LOG(INFO) << "Config loaded!";
+        LOG(INFO) << "Config loaded, " << (cfg._service_mode ? "" : "not ") << "running in service mode!";
         google::EnableLogCleaner(cfg._log_overdue_days);
+        fLI::FLAGS_max_log_size = cfg._max_log_size_mb;
+        fLI::FLAGS_logbufsecs = cfg._log_buf_secs;
 
         do
         {
@@ -649,6 +651,8 @@ int main(int argc, char * argv[])
                         if (!sync_host_static_v6_address(pve_api_client, host_v4_addr, host_v6_addr, guest_v6_addr))
                             LOG(WARNING) << "Failed to sync host static IPv6 address!";
                 }
+                else if (!cfg._service_mode)
+                    break;
                 else
                     std::this_thread::sleep_for(cfg._update_interval - elasped_time);
             }
