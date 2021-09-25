@@ -1,0 +1,50 @@
+name: CMake-MIPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Router model'
+        required: true
+        default: 'k2p'
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux, x64]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Check 3rdparty prebuilt cache
+        id: cache-nix
+        uses: actions/cache@v2
+        with:
+          path: 3rdparty/prebuilt
+          key: ${{ runner.os }}-${{ matrix.platform }}-${{ github.event.inputs.model }}-build-${{ hashFiles('3rdparty/build.sh') }}
+
+      - name: Prebuild 3rdparty libs
+        run: |
+          # make file runnable, might not be necessary
+          chmod +x "${GITHUB_WORKSPACE}/3rdparty/build.sh"
+          # run script
+          "${GITHUB_WORKSPACE}/3rdparty/build.sh"
+        if: steps.cache-nix.outputs.cache-hit != 'true'
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DPVE_DDNS_CLIENT_VER="0.0.1" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.event.inputs.model }}-artifact
+          path: |
+            ${{github.workspace}}/build/pve-ddns-client
+            ${{github.workspace}}/build/*.yml
