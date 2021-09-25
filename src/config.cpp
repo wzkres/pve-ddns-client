@@ -1,6 +1,7 @@
 #include "config.h"
 
-#include "glog/logging.h"
+#include <iostream>
+
 #include "yaml-cpp/yaml.h"
 
 // Parse general config from yaml node
@@ -96,34 +97,34 @@ bool Config::loadConfig(const std::string & config_file)
         // Mandatory general node
         if (conf["general"])
         {
-            LOG(INFO) << "Found general config!";
+            std::cout << "Found general config!" << std::endl;
             parse_general_config(conf["general"], *this);
         }
         else
         {
-            LOG(WARNING) << "General config not found!";
+            std::cerr << "General config not found!" << std::endl;
             return conf_valid;
         }
         // Load client config if specified
         if (conf["client"])
         {
-            LOG(INFO) << "Found client config!";
+            std::cout << "Found client config!" << std::endl;
             parse_ddns_config(conf["client"], _client_config);
-            LOG(INFO) << "Client config loaded, " << _client_config.ipv4_domains.size() << " ipv4 domain(s), "
-                << _client_config.ipv6_domains.size() << " ipv6 domain(s)!";
+            std::cout << "Client config loaded, " << _client_config.ipv4_domains.size() << " ipv4 domain(s), "
+                      << _client_config.ipv6_domains.size() << " ipv6 domain(s)!" << std::endl;
         }
         // Load host config if specified
         if (conf["host"])
         {
-            LOG(INFO) << "Found host config!";
+            std::cout << "Found host config!" << std::endl;
             parse_ddns_config(conf["host"], _host_config);
-            LOG(INFO) << "Host config loaded, " << _host_config.ipv4_domains.size() << " ipv4 domain(s), "
-                << _host_config.ipv6_domains.size() << " ipv6 domain(s)!";
+            std::cout << "Host config loaded, " << _host_config.ipv4_domains.size() << " ipv4 domain(s), "
+                      << _host_config.ipv6_domains.size() << " ipv6 domain(s)!" << std::endl;
         }
         // Load each guest config if any
         if (conf["guests"] && conf["guests"].IsSequence())
         {
-            LOG(INFO) << "Found guests config!";
+            std::cout << "Found guests config!" << std::endl;
             const auto & guests = conf["guests"];
             for (auto it = guests.begin(); it != guests.end(); ++it)
             {
@@ -135,14 +136,14 @@ bool Config::loadConfig(const std::string & config_file)
                     _guest_configs.emplace(guest_node["vmid"].as<int>(), temp);
                 }
             }
-            LOG(INFO) << _guest_configs.size() << " guest config(s) loaded!";
+            std::cout << _guest_configs.size() << " guest config(s) loaded!" << std::endl;
         }
 
         conf_valid = true;
     }
     catch (...)
     {
-        LOG(ERROR) << "Failed to load config yaml file '" << config_file << "'!";
+        std::cerr << "Failed to load config yaml file '" << config_file << "'!" << std::endl;
     }
 
     return conf_valid;
