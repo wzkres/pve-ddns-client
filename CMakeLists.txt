@@ -8,6 +8,8 @@ message("CMake version: " ${CMAKE_VERSION})
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(MIPS_TARGET "Building for mips target" OFF)
+
 add_definitions(-DFMT_HEADER_ONLY)
 add_definitions(-DCURL_STATICLIB)
 if(WIN32)
@@ -54,7 +56,11 @@ elseif(APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto z pthread dl
         ${LIB_FOUNDATION} ${LIB_SYSTEMCONFIGURATION})
 else()
-    target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto z pthread dl)
+    if(MIPS_TARGET)
+        target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto pthread dl)
+    else()
+        target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto z pthread dl)
+    endif()
 endif()
 
 

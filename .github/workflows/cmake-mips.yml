@@ -20,23 +20,40 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup K2P OpenWRT SDK env
+        run: |
+          export PATH=$PATH:/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/mipsel-openwrt-linux-uclibc:/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin
+          export AR=mipsel-openwrt-linux-uclibc-ar
+          export AS=mipsel-openwrt-linux-uclibc-as
+          export LD=mipsel-openwrt-linux-uclibc-ld
+          export NM=mipsel-openwrt-linux-uclibc-nm
+          export CC=mipsel-openwrt-linux-uclibc-gcc
+          export CPP=mipsel-openwrt-linux-uclibc-cpp
+          export GCC=mipsel-openwrt-linux-uclibc-gcc
+          export CXX=mipsel-openwrt-linux-uclibc-g++
+          export RANLIB=mipsel-openwrt-linux-uclibc-ranlib
+          export STAGING_DIR=/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir
+          export CFLAGS="-Os -s"
+          export CXXFLAGS="-Os -s"
+        if:  github.event.inputs.model == 'k2p'
+
       - name: Check 3rdparty prebuilt cache
         id: cache-nix
         uses: actions/cache@v2
         with:
           path: 3rdparty/prebuilt
-          key: ${{ runner.os }}-${{ matrix.platform }}-${{ github.event.inputs.model }}-build-${{ hashFiles('3rdparty/build.sh') }}
+          key: ${{ runner.os }}-${{ github.event.inputs.model }}-build-${{ hashFiles('3rdparty/build_mips.sh') }}
 
       - name: Prebuild 3rdparty libs
         run: |
           # make file runnable, might not be necessary
-          chmod +x "${GITHUB_WORKSPACE}/3rdparty/build.sh"
+          chmod +x "${GITHUB_WORKSPACE}/3rdparty/build_mips.sh"
           # run script
-          "${GITHUB_WORKSPACE}/3rdparty/build.sh"
+          "${GITHUB_WORKSPACE}/3rdparty/build_mips.sh"
         if: steps.cache-nix.outputs.cache-hit != 'true'
 
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DPVE_DDNS_CLIENT_VER="0.0.1" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake -B ${{github.workspace}}/build -DMIPS_TARGET=YES -DPVE_DDNS_CLIENT_VER="0.0.1" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
