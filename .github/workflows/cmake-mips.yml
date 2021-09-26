@@ -15,25 +15,27 @@ jobs:
   build:
     runs-on: [self-hosted, linux, x64]
 
-    env:
-      PATH: ${{env.PATH}}:/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/mipsel-openwrt-linux-uclibc:/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin
-      AR: mipsel-openwrt-linux-uclibc-ar
-      AS: mipsel-openwrt-linux-uclibc-as
-      LD: mipsel-openwrt-linux-uclibc-ld
-      NM: mipsel-openwrt-linux-uclibc-nm
-      CC: mipsel-openwrt-linux-uclibc-gcc
-      CPP: mipsel-openwrt-linux-uclibc-cpp
-      GCC: mipsel-openwrt-linux-uclibc-gcc
-      CXX: mipsel-openwrt-linux-uclibc-g++
-      RANLIB: mipsel-openwrt-linux-uclibc-ranlib
-      STAGING_DIR: /home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir
-      CFLAGS: "-Os -s"
-      CXXFLAGS: "-Os -s"
-
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
+
+      - name: Setting up OpenWRT SDK env...
+        run: |
+          echo '/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/mipsel-openwrt-linux-uclibc:/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin' >> $GITHUB_PATH
+          echo 'AR=mipsel-openwrt-linux-uclibc-ar' >> $GITHUB_ENV
+          echo 'AS=mipsel-openwrt-linux-uclibc-as' >> $GITHUB_ENV
+          echo 'LD=mipsel-openwrt-linux-uclibc-ld' >> $GITHUB_ENV
+          echo 'NM=mipsel-openwrt-linux-uclibc-nm' >> $GITHUB_ENV
+          echo 'CC=mipsel-openwrt-linux-uclibc-gcc' >> $GITHUB_ENV
+          echo 'CPP=mipsel-openwrt-linux-uclibc-cpp' >> $GITHUB_ENV
+          echo 'GCC=mipsel-openwrt-linux-uclibc-gcc' >> $GITHUB_ENV
+          echo 'CXX=mipsel-openwrt-linux-uclibc-g++' >> $GITHUB_ENV
+          echo 'RANLIB=mipsel-openwrt-linux-uclibc-ranlib' >> $GITHUB_ENV
+          echo 'STAGING_DIR=/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir' >> $GITHUB_ENV
+          echo 'CFLAGS="-Os -s"' >> $GITHUB_ENV
+          echo 'CXXFLAGS="-Os -s"' >> $GITHUB_ENV
+        if: github.event.inputs.model == 'k2p'
 
       - name: Check 3rdparty prebuilt cache
         id: cache-nix
