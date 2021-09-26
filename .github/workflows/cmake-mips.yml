@@ -15,27 +15,25 @@ jobs:
   build:
     runs-on: [self-hosted, linux, x64]
 
+    env:
+      PATH: /home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/mipsel-openwrt-linux-uclibc:/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin
+      AR: mipsel-openwrt-linux-uclibc-ar
+      AS: mipsel-openwrt-linux-uclibc-as
+      LD: mipsel-openwrt-linux-uclibc-ld
+      NM: mipsel-openwrt-linux-uclibc-nm
+      CC: mipsel-openwrt-linux-uclibc-gcc
+      CPP: mipsel-openwrt-linux-uclibc-cpp
+      GCC: mipsel-openwrt-linux-uclibc-gcc
+      CXX: mipsel-openwrt-linux-uclibc-g++
+      RANLIB: mipsel-openwrt-linux-uclibc-ranlib
+      STAGING_DIR: /home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir
+      CFLAGS: "-Os -s"
+      CXXFLAGS: "-Os -s"
+
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-
-      - name: Setup K2P OpenWRT SDK env
-        run: |
-          export PATH=$PATH:/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/mipsel-openwrt-linux-uclibc:/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin
-          export AR=mipsel-openwrt-linux-uclibc-ar
-          export AS=mipsel-openwrt-linux-uclibc-as
-          export LD=mipsel-openwrt-linux-uclibc-ld
-          export NM=mipsel-openwrt-linux-uclibc-nm
-          export CC=mipsel-openwrt-linux-uclibc-gcc
-          export CPP=mipsel-openwrt-linux-uclibc-cpp
-          export GCC=mipsel-openwrt-linux-uclibc-gcc
-          export CXX=mipsel-openwrt-linux-uclibc-g++
-          export RANLIB=mipsel-openwrt-linux-uclibc-ranlib
-          export STAGING_DIR=/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir
-          export CFLAGS="-Os -s"
-          export CXXFLAGS="-Os -s"
-        if:  github.event.inputs.model == 'k2p'
 
       - name: Check 3rdparty prebuilt cache
         id: cache-nix
