@@ -56,6 +56,15 @@ static size_t write_string_callback(const void * bufptr, size_t size, size_t nit
 //    return bytes_to_copy;
 //}
 
+std::string get_version_string()
+{
+#if defined(PVE_DDNS_CLIENT_VER)
+    return PVE_DDNS_CLIENT_VER;
+#else
+    return "dev";
+#endif
+}
+
 bool str_iequals(const std::string & l, const std::string & r)
 {
     if (l.length() != r.length())

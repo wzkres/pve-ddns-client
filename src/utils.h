@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 
+/// Get app version string
+/// \return Version string
+std::string get_version_string();
+
 /// Case-insensitive string comparison
 /// \param l First string
 /// \param r Second string

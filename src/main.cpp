@@ -68,13 +68,7 @@ static bool parse_cmd(int argc, char * argv[])
     {
         if (p.exist("version"))
         {
-            std::cout << "Ver "
-#if defined(PVE_DDNS_CLIENT_VER)
-                      << PVE_DDNS_CLIENT_VER
-#else
-                      << "dev"
-#endif
-                      << std::endl;
+            std::cout << "Ver " << get_version_string() << std::endl;
             ret = false;
         }
         else if (p.exist("help"))
@@ -327,11 +321,11 @@ static bool update_dns_records(const config_node & config_node, const std::strin
             if (found->second.last_ip != ip)
             {
                 LOG(INFO) << "IPv4 domain '" << domain << "' dns record address changed from '" << found->second.last_ip
-                    << "' to '" << ip << "', updating...";
+                          << "' to '" << ip << "', updating...";
                 if (dns_service->setIpv4(domain, ip))
                 {
                     LOG(INFO) << "IPv4 record of domain '" << domain << "' successfully updated from '"
-                        << found->second.last_ip << "' to '" << ip << "'.";
+                              << found->second.last_ip << "' to '" << ip << "'.";
                     found->second.last_ip = ip;
                     found->second.last_get_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::system_clock::now().time_since_epoch()
@@ -340,7 +334,7 @@ static bool update_dns_records(const config_node & config_node, const std::strin
                 else
                 {
                     LOG(WARNING) << "Failed to update IPv4 record from '" << found->second.last_ip << "' to '"
-                        << ip << "' of domain '" << domain << "'!";
+                                 << ip << "' of domain '" << domain << "'!";
                 }
             }
             else
@@ -360,11 +354,11 @@ static bool update_dns_records(const config_node & config_node, const std::strin
             if (found->second.last_ip != ip)
             {
                 LOG(INFO) << "IPv6 domain '" << domain << "' dns record address changed from '" << found->second.last_ip
-                << "' to '" << ip << "', updating...";
+                          << "' to '" << ip << "', updating...";
                 if (dns_service->setIpv6(domain, ip))
                 {
                     LOG(INFO) << "IPv6 record of domain '" << domain << "' successfully updated from '"
-                        << found->second.last_ip << "' to '" << ip << "'.";
+                              << found->second.last_ip << "' to '" << ip << "'.";
                     found->second.last_ip = ip;
                     found->second.last_get_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::system_clock::now().time_since_epoch()
@@ -373,7 +367,7 @@ static bool update_dns_records(const config_node & config_node, const std::strin
                 else
                 {
                     LOG(WARNING) << "Failed to update IPv6 record from '" << found->second.last_ip << "' to '"
-                        << ip << "' of domain '" << domain << "'!";
+                                 << ip << "' of domain '" << domain << "'!";
                 }
             }
             else
@@ -429,7 +423,7 @@ static bool sync_host_static_v6_address(const std::shared_ptr<PveApiClient> & pv
 
     const std::string new_host_v6_address = fmt::format("{}:{}", guest_1st_part, host_2nd_part);
     LOG(INFO) << "Host v6 static address 1st part changed from '" << host_1st_part << "' to '"
-        << guest_1st_part << "', updating host static IPv6 address to '" << new_host_v6_address << "'...";
+              << guest_1st_part << "', updating host static IPv6 address to '" << new_host_v6_address << "'...";
 
     int retry_count = 0;
     while(retry_count < 5)
@@ -439,7 +433,7 @@ static bool sync_host_static_v6_address(const std::shared_ptr<PveApiClient> & pv
                                                    host_v4_addr, new_host_v6_address))
         {
             LOG(WARNING) << "Failed to update synced host static IPv6 address, retry in 1 minute("
-                << retry_count << ")...";
+                         << retry_count << ")...";
 
             if (!pve_api_client->revertHostNetworkChange(cfg._host_config.node))
                 LOG(WARNING) << "Failed to revert host network change!";
@@ -523,7 +517,7 @@ int main(int argc, char * argv[])
 
     curl_global_init(CURL_GLOBAL_ALL);
 
-    LOG(INFO) << "Starting up, config loaded from '" << cfg._yml_path << "'.";
+    LOG(INFO) << "Starting up, ver " << get_version_string() << ", config loaded from '" << cfg._yml_path << "'.";
     LOG(INFO) << (cfg._service_mode ? "Running" : "Not running") << " in service mode...";
 
     do
