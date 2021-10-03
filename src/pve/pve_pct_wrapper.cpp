@@ -145,5 +145,5 @@ void PvePctWrapper::parseListResult(const std::string & result)
         LOG(INFO) << "Got LXC VMID '" << vmid << "' from result line '" << line << "'.";
         _lxc_vmids.emplace_back(vmid);
     }
-    LOG(INFO) << "Total " << _lxc_vmids.size() << " was successfully parsed from pct list result.";
+    LOG(INFO) << "Total " << _lxc_vmids.size() << " LXC VM id(s) parsed from pct list result.";
 }
