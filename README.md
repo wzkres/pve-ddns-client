@@ -98,7 +98,7 @@ options:
   -v, --version    显示版本号
   -h, --help       显示使用说明
   -c, --config     指定配置文件(默认 ./pve-ddns-client.yml)
-  -l, --log        指定日志保存位置(默认./)
+  -l, --log        指定日志保存位置(默认 ./)
 ```
 ### 构建
 待补全
