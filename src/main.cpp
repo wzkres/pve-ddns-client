@@ -17,7 +17,8 @@
 #include "utils.h"
 #include "public_ip/public_ip_getter.h"
 #include "dns_service/dns_service.h"
-#include "pve_api_client.h"
+#include "pve/pve_api_client.h"
+#include "pve/pve_pct_wrapper.h"
 
 // Main loop running flag
 static volatile bool g_running = true;
@@ -533,6 +534,8 @@ int main(int argc, char * argv[])
         LOG(INFO) << "Initial dns records updated!";
 
         std::shared_ptr<PveApiClient> pve_api_client;
+        std::shared_ptr<PvePctWrapper> pve_pct_wrapper;
+        // Only initialize PVE related stuff if needed
         if (!cfg._host_config.ipv4_domains.empty() || !cfg._host_config.ipv6_domains.empty() ||
             !cfg._guest_configs.empty())
         {
@@ -549,6 +552,17 @@ int main(int argc, char * argv[])
                 LOG(WARNING) << "PVE API client failed to init, but host and/or guest(s) node config present!";
                 break;
             }
+
+            pve_pct_wrapper = std::make_shared<PvePctWrapper>();
+            if (nullptr == pve_pct_wrapper)
+            {
+                LOG(ERROR) << "Failed to allocate PvePctWrapper!";
+                break;
+            }
+            if (pve_pct_wrapper->init())
+                LOG(INFO) << "PVE pct wrapper inited!";
+            else
+                LOG(WARNING) << "PVE pct wrapper failed to init, DDNS updating of LXC guests will not work!";
         }
 
         // Service loop

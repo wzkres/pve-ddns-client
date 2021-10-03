@@ -5,8 +5,8 @@
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 
-#include "config.h"
-#include "utils.h"
+#include "../config.h"
+#include "../utils.h"
 
 static const char * API_VERSION = "api2/json/version";
 static const char * API_HOST_NETWORK = "api2/json/nodes/{}/network/{}";
