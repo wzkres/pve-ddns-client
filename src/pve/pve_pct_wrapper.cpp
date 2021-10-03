@@ -11,6 +11,14 @@
 
 static const char * pct_cmd = "pct";
 
+#if WIN32
+#define pve_popen _popen
+#define pve_pclose _pclose
+#else
+#define pve_popen popen
+#define pve_pclose pclose
+#endif
+
 bool PvePctWrapper::init()
 {
     const std::string pct_list = fmt::format("{} list", pct_cmd);
@@ -33,7 +41,7 @@ bool PvePctWrapper::execute(const std::string & cmd, std::string & result)
         return false;
     }
     std::array<char, 128> buffer = {};
-    FILE * pipe = popen(cmd.c_str(), "r");
+    FILE * pipe = pve_popen(cmd.c_str(), "r");
     if (nullptr == pipe)
     {
         LOG(WARNING) << "Failed to popen '" << cmd << "'!";
@@ -41,7 +49,7 @@ bool PvePctWrapper::execute(const std::string & cmd, std::string & result)
     }
     while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
         result += buffer.data();
-    const int res = pclose(pipe);
+    const int res = pve_pclose(pipe);
     if (res != 0)
     {
         LOG(WARNING) << "Error pclose result '" << res << "' from execution of '" << cmd << "'!";
