@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       model:
-        description: 'Router model'
+        description: 'OpenWRT SDK'
         required: true
-        default: 'k2p'
+        default: 'mt7620a'
 
 env:
   BUILD_TYPE: Release
@@ -35,7 +35,7 @@ jobs:
           echo 'STAGING_DIR=/home/admin/openwrt/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2/staging_dir' >> $GITHUB_ENV
           echo 'CFLAGS=-Os -s' >> $GITHUB_ENV
           echo 'CXXFLAGS=-Os -s' >> $GITHUB_ENV
-        if: github.event.inputs.model == 'k2p'
+        if: github.event.inputs.model == 'mt7620a'
 
       - name: Check 3rdparty prebuilt cache
         id: cache-nix
