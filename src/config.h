@@ -15,10 +15,8 @@ typedef struct config_node_
     std::string iface;
     // DNS service type
     std::string dns_type;
-    // API key
-    std::string api_key;
-    // API secret
-    std::string api_secret;
+    // Credentials
+    std::string credentials;
     // IPv4 domain names to update
     std::vector<std::string> ipv4_domains;
     // IPv6 domain names to update

@@ -21,10 +21,9 @@ std::pair<std::string, std::string> get_sub_domain(const std::string & domain);
 
 /// Get DNS service key from type, api key and secret
 /// \param dns_type DNS service type
-/// \param api_key API key
-/// \param api_secret API secret
+/// \param credentials DNS service credentials
 /// \return Hashed key
-size_t get_dns_service_key(const std::string & dns_type, const std::string & api_key, const std::string & api_secret);
+size_t get_dns_service_key(const std::string & dns_type, const std::string & credentials);
 
 /// Check if given IP is v4 address
 /// \param s IP address string

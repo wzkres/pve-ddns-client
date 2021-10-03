@@ -162,9 +162,7 @@ static IDnsService * get_dns_service(const size_t service_key)
     return it->second;
 }
 
-static bool create_dns_service(const std::string & dns_type,
-                               const std::string & api_key,
-                               const std::string & api_secret)
+static bool create_dns_service(const std::string & dns_type, const std::string & credentials)
 {
     if (nullptr == g_dns_services)
     {
@@ -172,7 +170,7 @@ static bool create_dns_service(const std::string & dns_type,
         return false;
     }
 
-    const size_t key = get_dns_service_key(dns_type, api_key, api_secret);
+    const size_t key = get_dns_service_key(dns_type, credentials);
     if (g_dns_services->find(key) == g_dns_services->end())
     {
         IDnsService * dns_service = DnsServiceFactory::create(dns_type);
@@ -181,7 +179,7 @@ static bool create_dns_service(const std::string & dns_type,
             LOG(WARNING) << "Failed to create dns service " << dns_type << "!";
             return false;
         }
-        if (!dns_service->setCredentials(fmt::format("{},{}", api_key, api_secret)))
+        if (!dns_service->setCredentials(credentials))
         {
             LOG(WARNING) << "Failed to setCredentials!";
             DnsServiceFactory::destroy(dns_service);
@@ -209,23 +207,19 @@ static void cleanup_dns_services()
 static bool init_dns_services()
 {
     const auto & cfg = Config::getInstance();
-    if (!cfg._client_config.dns_type.empty() &&
-        !cfg._client_config.api_key.empty() && !cfg._client_config.api_secret.empty())
-        if (!create_dns_service(cfg._client_config.dns_type, cfg._client_config.api_key, cfg._client_config.api_secret))
+    if (!cfg._client_config.dns_type.empty() && !cfg._client_config.credentials.empty())
+        if (!create_dns_service(cfg._client_config.dns_type, cfg._client_config.credentials))
             return false;
 
-    if (!cfg._host_config.dns_type.empty() && !cfg._host_config.api_key.empty() && !cfg._host_config.api_secret.empty())
-        if (!create_dns_service(cfg._host_config.dns_type, cfg._host_config.api_key, cfg._host_config.api_secret))
+    if (!cfg._host_config.dns_type.empty() && !cfg._host_config.credentials.empty())
+        if (!create_dns_service(cfg._host_config.dns_type, cfg._host_config.credentials))
             return false;
 
     for (auto & guest_config : cfg._guest_configs)
     {
-        if (!guest_config.second.dns_type.empty() &&
-            !guest_config.second.api_key.empty() && !guest_config.second.api_secret.empty())
+        if (!guest_config.second.dns_type.empty() && !guest_config.second.credentials.empty())
         {
-            if (!create_dns_service(guest_config.second.dns_type,
-                                    guest_config.second.api_key,
-                                    guest_config.second.api_secret))
+            if (!create_dns_service(guest_config.second.dns_type, guest_config.second.credentials))
             {
                 cleanup_dns_services();
                 return false;
@@ -239,7 +233,7 @@ static bool init_dns_services()
 static void init_node_dns_records(const config_node & node)
 {
     Config & cfg = Config::getInstance();
-    const size_t dns_service_key = get_dns_service_key(node.dns_type, node.api_key, node.api_secret);
+    const size_t dns_service_key = get_dns_service_key(node.dns_type, node.credentials);
     auto * dns_service = get_dns_service(dns_service_key);
     if (nullptr != dns_service)
     {
@@ -300,7 +294,7 @@ static void init_dns_records()
 static bool update_dns_records(const config_node & config_node, const std::string & ip, const bool is_v4)
 {
     auto & cfg = Config::getInstance();
-    size_t dns_service_key = get_dns_service_key(config_node.dns_type, config_node.api_key, config_node.api_secret);
+    size_t dns_service_key = get_dns_service_key(config_node.dns_type, config_node.credentials);
     auto * dns_service = get_dns_service(dns_service_key);
     if (nullptr == dns_service)
     {

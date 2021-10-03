@@ -260,6 +260,7 @@ bool DnsServiceDnspod::updateRecordCache(const std::string & domain, bool is_v4,
 
     return true;
 }
+
 const dnspod_record_cache * DnsServiceDnspod::getRecordCache(const std::string & domain, bool is_v4) const
 {
     if (domain.empty())

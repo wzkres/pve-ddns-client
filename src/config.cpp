@@ -66,10 +66,8 @@ static void parse_ddns_config(const YAML::Node & yaml_node, config_node & cfg_no
         cfg_node.iface = yaml_node["iface"].as<std::string>();
     if (yaml_node["dns"])
         cfg_node.dns_type = yaml_node["dns"].as<std::string>();
-    if (yaml_node["api-key"])
-        cfg_node.api_key = yaml_node["api-key"].as<std::string>();
-    if (yaml_node["api-secret"])
-        cfg_node.api_secret = yaml_node["api-secret"].as<std::string>();
+    if (yaml_node["credentials"])
+        cfg_node.credentials = yaml_node["credentials"].as<std::string>();
     if (yaml_node["ipv4"] && yaml_node["ipv4"].IsSequence())
     {
         const auto & ipv4_domains = yaml_node["ipv4"];

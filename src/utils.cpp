@@ -93,10 +93,10 @@ std::pair<std::string, std::string> get_sub_domain(const std::string & domain)
     return { domain.substr(pos + 1), domain.substr(0, pos) };
 }
 
-size_t get_dns_service_key(const std::string & dns_type, const std::string & api_key, const std::string & api_secret)
+size_t get_dns_service_key(const std::string & dns_type, const std::string & credentials)
 {
     std::hash<std::string> str_hash;
-    return str_hash(fmt::format("{}:{}:{}", dns_type, api_key, api_secret));
+    return str_hash(fmt::format("{}:{}", dns_type, credentials));
 }
 
 // Function to check if the given string s is IPv4 or not
