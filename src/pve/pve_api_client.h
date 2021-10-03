@@ -17,7 +17,7 @@ public:
     /// \return A pair of strings, first is IPv4 address, second is IPv6 address (empty string if failed to get)
     std::pair<std::string, std::string> getHostIp(const std::string & node, const std::string & iface);
 
-    /// Get guest VM IPv4 and IPv6 address of specific interface
+    /// Get KVM guest VM IPv4 and IPv6 address of specific interface
     /// \param node PVE node name
     /// \param vmid VM id
     /// \param iface Interface name

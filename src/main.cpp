@@ -625,7 +625,11 @@ int main(int argc, char * argv[])
                 std::string guest_v6_addr;
                 for (auto & guest : cfg._guest_configs)
                 {
-                    auto ret = pve_api_client->getGuestIp(guest.second.node, guest.first, guest.second.iface);
+                    std::pair<std::string, std::string> ret = {};
+                    if (pve_pct_wrapper->isLxcGuest(guest.first))
+                        ret = pve_pct_wrapper->getGuestIp(guest.first, guest.second.iface);
+                    else
+                        ret = pve_api_client->getGuestIp(guest.second.node, guest.first, guest.second.iface);
                     if (!ret.second.empty() && guest_v6_addr.empty())
                         guest_v6_addr = ret.second;
                     if (!guest.second.ipv4_domains.empty() && ret.first.empty())

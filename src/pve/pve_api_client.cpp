@@ -72,7 +72,7 @@ std::pair<std::string, std::string> PveApiClient::getHostIp(const std::string & 
 }
 
 std::pair<std::string, std::string> PveApiClient::getGuestIp(const std::string & node,
-                                                             int vmid,
+                                                             const int vmid,
                                                              const std::string & iface)
 {
     const auto & config = Config::getInstance();
