@@ -6,7 +6,17 @@
 A Proxmox VE (PVE) dedicated DDNS updater written in C++
 ### Detailed description
 ### Usage
-TBD
+- pve-ddns-client.yml yaml config file
+
+- Command line parameters
+```
+usage: ./pve-ddns-client [options] ... 
+options:
+  -v, --version    Print version
+  -h, --help       Show usage
+  -c, --config     Config yaml file to load (string [=./pve-ddns-client.yml])
+  -l, --log        Log file path (string [=./])
+```
 ### Build
 Please refer to GitHub Actions workflow：https://github.com/wzkres/pve-ddns-client/blob/main/.github/workflows/cmake.yml
 
