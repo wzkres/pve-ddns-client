@@ -5,9 +5,89 @@
 ## EN
 A Proxmox VE (PVE) dedicated DDNS updater written in C++
 ### Detailed description
+**pve-ddns-client** is a DDNS updater designed specifically for the Proxmox VE (PVE) virtualization management platform. Generally deployed in the PVE host system, it is used to update DDNS domain records for host and all guests (including KVM and LXC guests). Also it can be deployed on any device that can access the PVE host API (in this case, DDNS updating of LXC guests will not work, since pct command line tool can only be accessed from the PVE host system). It can even be deployed as a normal DDNS updater (when only the client section is specified in the configuration file).
 ### Usage
 - pve-ddns-client.yml yaml config file
-
+```yaml
+# General configuration
+general:
+  # Update interval in milliseconds, only for service mode
+  update-interval-ms: 300000
+  # Log overdue days
+  log-overdue-days: 3
+  # Log buffer seconds
+  log-buf-secs: 2
+  # Max size per log file in megabytes
+  max-log-size-mb: 2
+  # Long-running service mode
+  service-mode: true
+  # Public IP getter
+  public-ip:
+    # Service type: porkbun, ipify
+    service: porkbun
+    # Credentials
+    # porkbun: api_key,secret_key
+    # ipify: leave empty
+    credentials: api_key,secret_key
+  # PVE API access
+  pve-api:
+    # API root url
+    host: https://pve.domain.com:8006
+    # Username
+    user: root
+    # Realm
+    realm: pam
+    # Token ID
+    token-id: ddns
+    # Token UUID
+    token-uuid: uuid
+  # Special feature for syncing host static IPv6 address with guest DHCP IPv6 address
+  sync_host_static_v6_address: false
+# Client DDNS configuration (when working as a normal DDNS updater)
+client:
+  # DNS service type: porkbun, dnspod
+  dns: dnspod
+  # Credentials
+  # porkbun: api_key,secret_key
+  # dnspod: token_id,token
+  credentials: token_id,token
+  # IPv4 (A record) domains
+  ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
+  # IPv6 (AAAA record) domains
+  ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
+# PVE host DDNS configuration
+host:
+  # Node name
+  node: node
+  # Network interface name
+  iface: vmbr0
+  # DNS service type, refer to client section
+  dns: porkbun
+  # Credentials, refer to client section
+  credentials: api_key,secret_key
+  # IPv4 (A record) domains
+  ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
+  # IPv6 (AAAA record) domains
+  ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
+# PVE guest DDNS configuration, basically same as host section with an additional VM id
+guests:
+  # KVM guest example
+  - node: node
+    vmid: 100
+    iface: ens18
+    dns: porkbun
+    credentials: api_key,secret_key
+    ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
+    ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
+  # LXC guest example (must run inside PVE host system for this to work)
+  - node: node
+    vmid: 101
+    iface: eth0
+    dns: porkbun
+    credentials: api_key,secret_key
+    ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
+    ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
+```
 - Command line parameters
 ```
 usage: ./pve-ddns-client [options] ... 
