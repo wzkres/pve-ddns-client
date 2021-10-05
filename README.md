@@ -3,14 +3,17 @@
 [![CMake](https://github.com/wzkres/pve-ddns-client/actions/workflows/cmake.yml/badge.svg)](https://github.com/wzkres/pve-ddns-client/actions/workflows/cmake.yml)
 
 ## EN
-A Proxmox VE host dedicated DDNS updater written in C++
+A Proxmox VE (PVE) dedicated DDNS updater written in C++
+### Detailed description
 ### Usage
 TBD
 ### Build
-TBD
+Please refer to GitHub Actions workflow：https://github.com/wzkres/pve-ddns-client/blob/main/.github/workflows/cmake.yml
 
 ## CN
-一款使用C++开发的针对Proxmox VE环境的DDNS自动更新程序
+一款C++开发的针对Proxmox VE环境的DDNS自动更新程序
+### 详细介绍
+本程序用于配合Proxmox VE（以下简称PVE）虚拟化环境下的宿主机和客户机动态IP（DHCP）变化，自动更新相关域名记录。一般部署于PVE宿主系统中（可同时支持宿主、KVM客户、LXC客户系统的动态IP域名更新），也可部署在任意可访问到PVE宿主API的设备上（此时由于无法调用宿主系统上的pct命令行工具，所有LXC客户系统将无法正常更新DDNS域名），甚至可以作为普通DDNS更新程序部署在任何设备上（配置文件中仅指定client配置）。
 ### 使用说明
 - pve-ddns-client.yml 配置文件说明：
 ```yaml
@@ -76,6 +79,7 @@ host:
   ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
 # PVE客户虚拟机DDNS配置，除需指定vmid外，其它配置项与host一致
 guests:
+  # KVM客户系统节点示例
   - node: node
     vmid: 100
     iface: ens18
@@ -83,9 +87,10 @@ guests:
     credentials: api_key,secret_key
     ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
     ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
+  # LXC客户系统节点示例（此时程序需运行在PVE宿主系统上）
   - node: node
     vmid: 101
-    iface: ens18
+    iface: eth0
     dns: porkbun
     credentials: api_key,secret_key
     ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
@@ -101,4 +106,4 @@ options:
   -l, --log        指定日志保存位置(默认 ./)
 ```
 ### 构建
-待补全
+请参考GitHub Actions workflow：https://github.com/wzkres/pve-ddns-client/blob/main/.github/workflows/cmake.yml
