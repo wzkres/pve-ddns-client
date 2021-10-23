@@ -6,6 +6,7 @@
 /// DNS service implementations
 constexpr const char * DNS_SERVICE_PORKBUN = "porkbun";
 constexpr const char * DNS_SERVICE_DNSPOD = "dnspod";
+constexpr const char * DNS_SERVICE_CLOUDFLARE = "cloudflare";
 
 /// DNS service interface
 class IDnsService

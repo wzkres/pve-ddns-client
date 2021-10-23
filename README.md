@@ -45,11 +45,12 @@ general:
   sync_host_static_v6_address: false
 # Client DDNS configuration (when working as a normal DDNS updater)
 client:
-  # DNS service type: porkbun, dnspod
+  # DNS service type: porkbun, dnspod, cloudflare
   dns: dnspod
   # Credentials
   # porkbun: api_key,secret_key
   # dnspod: token_id,token
+  # cloudflare: api_token
   credentials: token_id,token
   # IPv4 (A record) domains
   ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
@@ -143,11 +144,12 @@ general:
   sync_host_static_v6_address: false
 # 客户端DDNS配置（运行本程序的系统，不一定是PVE的宿主，此时本程序工作方式与一般DDNS更新程序类似）
 client:
-  # 服务类型，可选值为 porkbun, dnspod
+  # 服务类型，可选值为 porkbun, dnspod, cloudflare
   dns: dnspod
   # 鉴权信息
   # porkbun为 api_key,secret_key 的格式
   # dnspod为 token_id,token 的格式
+  # cloudflare诶 api_token 的格式
   credentials: token_id,token
   # 所有需要更新IPv4 A记录的域名
   ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
