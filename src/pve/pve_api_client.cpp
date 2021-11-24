@@ -171,10 +171,6 @@ bool PveApiClient::setHostNetworkAddress(const std::string & node, const std::st
         return false;
     }
 
-//    if (d.HasMember("data") && d["data"].IsObject())
-//    {
-//    }
-
     return true;
 }
 
@@ -222,10 +218,6 @@ bool PveApiClient::reqHostNetwork(const std::string & method, const std::string 
                      << "' (" << ok.Offset() << ")";
         return false;
     }
-
-//    if (d.HasMember("data") && d["data"].IsObject())
-//    {
-//    }
 
     return true;
 }
