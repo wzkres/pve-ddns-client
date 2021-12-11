@@ -48,7 +48,7 @@ static bool parse_cmd(int argc, char * argv[])
 {
     if (argc < 1 || nullptr == argv || nullptr == argv[0])
     {
-        LOG(ERROR) << "Invalid command line params!";
+        std::cerr << "Invalid command line params!" << std::endl;
         return false;
     }
 
@@ -292,6 +292,84 @@ static void init_dns_records()
     }
 }
 
+static bool update_dns_records_v4(const config_node & config_node, const std::string & ip, IDnsService * dns_service)
+{
+    if (ip.empty() || nullptr == dns_service)
+    {
+        LOG(WARNING) << "Invalid params!";
+        return false;
+    }
+    auto & cfg = Config::getInstance();
+    for (const auto & domain : config_node.ipv4_domains)
+    {
+        auto found = cfg._ipv4_records.find(domain);
+        if (cfg._ipv4_records.end() == found)
+        {
+            LOG(WARNING) << "IPv4 domain '" << domain << "' dns record not found!";
+            return false;
+        }
+        if (found->second.last_ip != ip)
+        {
+            LOG(INFO) << "IPv4 domain '" << domain << "' dns record address changed from '" << found->second.last_ip
+                      << "' to '" << ip << "', updating...";
+            if (dns_service->setIpv4(domain, ip))
+            {
+                LOG(INFO) << "IPv4 record of domain '" << domain << "' successfully updated from '"
+                          << found->second.last_ip << "' to '" << ip << "'.";
+                found->second.last_ip = ip;
+                found->second.last_get_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()
+                );
+            }
+            else
+                LOG(WARNING) << "Failed to update IPv4 record from '" << found->second.last_ip << "' to '"
+                             << ip << "' of domain '" << domain << "'!";
+        }
+        else
+            LOG(INFO) << "IPv4 domain '" << domain << "' dns record address '" << ip << "' not changed.";
+    }
+    return true;
+}
+
+static bool update_dns_records_v6(const config_node & config_node, const std::string & ip, IDnsService * dns_service)
+{
+    if (ip.empty() || nullptr == dns_service)
+    {
+        LOG(WARNING) << "Invalid params!";
+        return false;
+    }
+    auto & cfg = Config::getInstance();
+    for (const auto & domain : config_node.ipv6_domains)
+    {
+        auto found = cfg._ipv6_records.find(domain);
+        if (cfg._ipv6_records.end() == found)
+        {
+            LOG(WARNING) << "IPv6 domain '" << domain << "' dns record not found!";
+            return false;
+        }
+        if (found->second.last_ip != ip)
+        {
+            LOG(INFO) << "IPv6 domain '" << domain << "' dns record address changed from '" << found->second.last_ip
+                      << "' to '" << ip << "', updating...";
+            if (dns_service->setIpv6(domain, ip))
+            {
+                LOG(INFO) << "IPv6 record of domain '" << domain << "' successfully updated from '"
+                          << found->second.last_ip << "' to '" << ip << "'.";
+                found->second.last_ip = ip;
+                found->second.last_get_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()
+                );
+            }
+            else
+                LOG(WARNING) << "Failed to update IPv6 record from '" << found->second.last_ip << "' to '"
+                             << ip << "' of domain '" << domain << "'!";
+        }
+        else
+            LOG(INFO) << "IPv6 domain '" << domain << "' dns record address '" << ip << "' not changed.";
+    }
+    return true;
+}
+
 static bool update_dns_records(const config_node & config_node, const std::string & ip, const bool is_v4)
 {
     auto & cfg = Config::getInstance();
@@ -305,69 +383,13 @@ static bool update_dns_records(const config_node & config_node, const std::strin
 
     if (is_v4)
     {
-        for (const auto & domain : config_node.ipv4_domains)
-        {
-            auto found = cfg._ipv4_records.find(domain);
-            if (cfg._ipv4_records.end() == found)
-            {
-                LOG(WARNING) << "IPv4 domain '" << domain << "' dns record not found!";
-                return false;
-            }
-            if (found->second.last_ip != ip)
-            {
-                LOG(INFO) << "IPv4 domain '" << domain << "' dns record address changed from '" << found->second.last_ip
-                          << "' to '" << ip << "', updating...";
-                if (dns_service->setIpv4(domain, ip))
-                {
-                    LOG(INFO) << "IPv4 record of domain '" << domain << "' successfully updated from '"
-                              << found->second.last_ip << "' to '" << ip << "'.";
-                    found->second.last_ip = ip;
-                    found->second.last_get_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::system_clock::now().time_since_epoch()
-                    );
-                }
-                else
-                {
-                    LOG(WARNING) << "Failed to update IPv4 record from '" << found->second.last_ip << "' to '"
-                                 << ip << "' of domain '" << domain << "'!";
-                }
-            }
-            else
-                LOG(INFO) << "IPv4 domain '" << domain << "' dns record address '" << ip << "' not changed.";
-        }
+        if (!update_dns_records_v4(config_node, ip, dns_service))
+            return false;
     }
     else
     {
-        for (const auto & domain : config_node.ipv6_domains)
-        {
-            auto found = cfg._ipv6_records.find(domain);
-            if (cfg._ipv6_records.end() == found)
-            {
-                LOG(WARNING) << "IPv6 domain '" << domain << "' dns record not found!";
-                return false;
-            }
-            if (found->second.last_ip != ip)
-            {
-                LOG(INFO) << "IPv6 domain '" << domain << "' dns record address changed from '" << found->second.last_ip
-                          << "' to '" << ip << "', updating...";
-                if (dns_service->setIpv6(domain, ip))
-                {
-                    LOG(INFO) << "IPv6 record of domain '" << domain << "' successfully updated from '"
-                              << found->second.last_ip << "' to '" << ip << "'.";
-                    found->second.last_ip = ip;
-                    found->second.last_get_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::system_clock::now().time_since_epoch()
-                    );
-                }
-                else
-                {
-                    LOG(WARNING) << "Failed to update IPv6 record from '" << found->second.last_ip << "' to '"
-                                 << ip << "' of domain '" << domain << "'!";
-                }
-            }
-            else
-                LOG(INFO) << "IPv6 domain '" << domain << "' dns record address '" << ip << "' not changed.";
-        }
+        if (!update_dns_records_v6(config_node, ip, dns_service))
+            return false;
     }
 
     return true;
@@ -476,21 +498,20 @@ static bool sync_host_static_v6_address(const std::shared_ptr<PveApiClient> & pv
     return true;
 }
 
-// main
-int main(int argc, char * argv[])
+static bool initialize(int argc, char * argv[])
 {
 //#ifdef WIN32
 //    SetConsoleCtrlHandler(ctrl_handler, TRUE);
 //#endif
     if (!parse_cmd(argc, argv))
-        return EXIT_SUCCESS;
+        return false;
 
     Config & cfg = Config::getInstance();
     const bool cfg_valid = cfg.loadConfig(cfg._yml_path);
     if (!cfg_valid)
     {
         std::cerr << "Failed to load config from '" << cfg._yml_path << "'!" << std::endl;
-        return EXIT_SUCCESS;
+        return false;
     }
 
     FLAGS_log_dir = cfg._log_path;
@@ -512,6 +533,19 @@ int main(int argc, char * argv[])
 
     curl_global_init(CURL_GLOBAL_ALL);
 
+    return true;
+}
+
+// main
+int main(int argc, char * argv[])
+{
+    if (!initialize(argc, argv))
+    {
+        std::cerr << "Failed to initialize!" << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    Config & cfg = Config::getInstance();
     LOG(INFO) << "Starting up, ver " << get_version_string() << ", config loaded from '" << cfg._yml_path << "'.";
     LOG(INFO) << (cfg._service_mode ? "Running" : "Not running") << " in service mode...";
 
