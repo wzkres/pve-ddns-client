@@ -536,6 +536,168 @@ static bool initialize(int argc, char * argv[])
     return true;
 }
 
+static bool initialize_services(std::shared_ptr<PveApiClient> & pve_api_client,
+                                std::shared_ptr<PvePctWrapper> & pve_pct_wrapper)
+{
+    g_dns_services = std::make_shared<std::unordered_map<size_t, IDnsService *>>();
+    if (!init_public_ip_getter())
+    {
+        LOG(WARNING) << "Failed to init public ip!";
+        return false;
+    }
+    LOG(INFO) << "Public IP getter inited!";
+    if (!init_dns_services())
+    {
+        LOG(WARNING) << "Failed to init dns services!";
+        return false;
+    }
+    LOG(INFO) << "All DNS services inited!";
+    init_dns_records();
+    LOG(INFO) << "Initial dns records updated!";
+
+    const Config & cfg = Config::getInstance();
+    // Only initialize PVE related stuff if needed
+    if (!cfg._host_config.ipv4_domains.empty() || !cfg._host_config.ipv6_domains.empty() ||
+        !cfg._guest_configs.empty())
+    {
+        pve_api_client = std::make_shared<PveApiClient>();
+        if (nullptr == pve_api_client)
+        {
+            LOG(ERROR) << "Failed to allocate PveApiClient!";
+            return false;
+        }
+        if (pve_api_client->init())
+            LOG(INFO) << "PVE API client inited!";
+        else
+        {
+            LOG(WARNING) << "PVE API client failed to init, but host and/or guest(s) node config present!";
+            return false;
+        }
+
+        pve_pct_wrapper = std::make_shared<PvePctWrapper>();
+        if (nullptr == pve_pct_wrapper)
+        {
+            LOG(ERROR) << "Failed to allocate PvePctWrapper!";
+            return false;
+        }
+        if (pve_pct_wrapper->init())
+            LOG(INFO) << "PVE pct wrapper inited!";
+        else
+            LOG(WARNING) << "PVE pct wrapper failed to init, DDNS updating of LXC guests will not work!";
+    }
+
+    return true;
+}
+
+static void update_client()
+{
+    Config & cfg = Config::getInstance();
+    if (!cfg._client_config.ipv4_domains.empty())
+    {
+        cfg._my_public_ipv4 = g_ip_getter->getIpv4();
+        if (cfg._my_public_ipv4.empty())
+            LOG(WARNING) << "Failed to get client public IPv4 address!";
+        else if (!update_dns_records(cfg._client_config, cfg._my_public_ipv4, true))
+            LOG(WARNING) << "Failed to update client v4 dns records!";
+    }
+
+    if (!cfg._client_config.ipv6_domains.empty())
+    {
+        cfg._my_public_ipv6 = g_ip_getter->getIpv6();
+        if (cfg._my_public_ipv6.empty())
+            LOG(WARNING) << "Failed to get client public IPv6 address!";
+        else if (!update_dns_records(cfg._client_config, cfg._my_public_ipv6, false))
+            LOG(WARNING) << "Failed to update client v6 dns record!";
+    }
+}
+
+static void update_host(const std::shared_ptr<PveApiClient> & pve_api_client,
+                        std::string & host_v4_addr, std::string & host_v6_addr)
+{
+    if (nullptr == pve_api_client)
+    {
+        LOG(WARNING) << "Invalid pve_api_client!";
+        return;
+    }
+    const Config & cfg = Config::getInstance();
+    if (!cfg._host_config.ipv4_domains.empty() || !cfg._host_config.ipv6_domains.empty())
+    {
+        auto ret = pve_api_client->getHostIp(cfg._host_config.node, cfg._host_config.iface);
+        host_v4_addr = ret.first;
+        host_v6_addr = ret.second;
+        if (!cfg._host_config.ipv4_domains.empty() && ret.first.empty())
+        {
+            LOG(WARNING) << "Failed to get host IPv4 address!";
+            g_running = false;
+        }
+        else if (!cfg._host_config.ipv4_domains.empty() && !ret.first.empty())
+        {
+            if (!update_dns_records(cfg._host_config, ret.first, true))
+                LOG(WARNING) << "Failed to update host v4 dns records!";
+        }
+
+        if (!cfg._host_config.ipv6_domains.empty() && ret.second.empty())
+        {
+            LOG(WARNING) << "Failed to get host IPv6 address!";
+            g_running = false;
+        }
+        else if (!cfg._host_config.ipv6_domains.empty() && !ret.second.empty())
+        {
+            if (!update_dns_records(cfg._host_config, ret.second, false))
+                LOG(WARNING) << "Failed to update host v6 dns records!";
+        }
+    }
+}
+
+static void update_guests(const std::shared_ptr<PveApiClient> & pve_api_client,
+                          const std::shared_ptr<PvePctWrapper> & pve_pct_wrapper,
+                          const std::string & host_v4_addr, const std::string & host_v6_addr)
+{
+    if (nullptr == pve_api_client || nullptr == pve_pct_wrapper)
+    {
+        LOG(WARNING) << "Invalid pve_api_client and/or pve_pct_wrapper!";
+        return;
+    }
+    std::string guest_v6_addr;
+    const Config & cfg = Config::getInstance();
+    for (auto & guest : cfg._guest_configs)
+    {
+        std::pair<std::string, std::string> ret = {};
+        if (pve_pct_wrapper->isLxcGuest(guest.first))
+            ret = pve_pct_wrapper->getGuestIp(guest.first, guest.second.iface);
+        else
+            ret = pve_api_client->getGuestIp(guest.second.node, guest.first, guest.second.iface);
+        if (!ret.second.empty() && guest_v6_addr.empty())
+            guest_v6_addr = ret.second;
+        if (!guest.second.ipv4_domains.empty() && ret.first.empty())
+        {
+            LOG(WARNING) << "Failed to get guest(vmid: " << guest.first << ") IPv4 address!";
+            g_running = false;
+        }
+        else if (!guest.second.ipv4_domains.empty() && !ret.first.empty())
+        {
+            if (!update_dns_records(guest.second, ret.first, true))
+                LOG(WARNING) << "Failed to update guest(vmid: " << guest.first << ") v4 dns records!";
+        }
+
+        if (!guest.second.ipv6_domains.empty() && ret.second.empty())
+        {
+            LOG(WARNING) << "Failed to get guest(vmid: " << guest.first << ") IPv6 address!";
+            g_running = false;
+        }
+        else if (!guest.second.ipv6_domains.empty() && !ret.second.empty())
+        {
+            if (!update_dns_records(guest.second, ret.second, false))
+                LOG(WARNING) << "Failed to update guest(vmid: " << guest.first << ") v6 dns records!";
+        }
+    }
+
+    if ((!cfg._host_config.ipv4_domains.empty() || !cfg._host_config.ipv6_domains.empty()) &&
+        cfg._sync_host_static_v6_address)
+        if (!sync_host_static_v6_address(pve_api_client, host_v4_addr, host_v6_addr, guest_v6_addr))
+            LOG(WARNING) << "Failed to sync host static IPv6 address!";
+}
+
 // main
 int main(int argc, char * argv[])
 {
@@ -551,52 +713,12 @@ int main(int argc, char * argv[])
 
     do
     {
-        g_dns_services = std::make_shared<std::unordered_map<size_t, IDnsService *>>();
-        if (!init_public_ip_getter())
-        {
-            LOG(WARNING) << "Failed to init public ip!";
-            break;
-        }
-        LOG(INFO) << "Public IP getter inited!";
-        if (!init_dns_services())
-        {
-            LOG(WARNING) << "Failed to init dns services!";
-            break;
-        }
-        LOG(INFO) << "All DNS services inited!";
-        init_dns_records();
-        LOG(INFO) << "Initial dns records updated!";
-
         std::shared_ptr<PveApiClient> pve_api_client;
         std::shared_ptr<PvePctWrapper> pve_pct_wrapper;
-        // Only initialize PVE related stuff if needed
-        if (!cfg._host_config.ipv4_domains.empty() || !cfg._host_config.ipv6_domains.empty() ||
-            !cfg._guest_configs.empty())
+        if (!initialize_services(pve_api_client, pve_pct_wrapper))
         {
-            pve_api_client = std::make_shared<PveApiClient>();
-            if (nullptr == pve_api_client)
-            {
-                LOG(ERROR) << "Failed to allocate PveApiClient!";
-                break;
-            }
-            if (pve_api_client->init())
-                LOG(INFO) << "PVE API client inited!";
-            else
-            {
-                LOG(WARNING) << "PVE API client failed to init, but host and/or guest(s) node config present!";
-                break;
-            }
-
-            pve_pct_wrapper = std::make_shared<PvePctWrapper>();
-            if (nullptr == pve_pct_wrapper)
-            {
-                LOG(ERROR) << "Failed to allocate PvePctWrapper!";
-                break;
-            }
-            if (pve_pct_wrapper->init())
-                LOG(INFO) << "PVE pct wrapper inited!";
-            else
-                LOG(WARNING) << "PVE pct wrapper failed to init, DDNS updating of LXC guests will not work!";
+            LOG(WARNING) << "Failed to initialize_services!";
+            break;
         }
 
         // Service loop
@@ -608,91 +730,10 @@ int main(int argc, char * argv[])
                 cfg._last_update_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()
                 );
-
-                if (!cfg._client_config.ipv4_domains.empty())
-                {
-                    cfg._my_public_ipv4 = g_ip_getter->getIpv4();
-                    if (cfg._my_public_ipv4.empty())
-                        LOG(WARNING) << "Failed to get client public IPv4 address!";
-                    else if (!update_dns_records(cfg._client_config, cfg._my_public_ipv4, true))
-                        LOG(WARNING) << "Failed to update client v4 dns records!";
-                }
-
-                if (!cfg._client_config.ipv6_domains.empty())
-                {
-                    cfg._my_public_ipv6 = g_ip_getter->getIpv6();
-                    if (cfg._my_public_ipv6.empty())
-                        LOG(WARNING) << "Failed to get client public IPv6 address!";
-                    else if (!update_dns_records(cfg._client_config, cfg._my_public_ipv6, false))
-                        LOG(WARNING) << "Failed to update client v6 dns record!";
-                }
-
+                update_client();
                 std::string host_v4_addr, host_v6_addr;
-                if (!cfg._host_config.ipv4_domains.empty() || !cfg._host_config.ipv6_domains.empty())
-                {
-                    auto ret = pve_api_client->getHostIp(cfg._host_config.node, cfg._host_config.iface);
-                    host_v4_addr = ret.first;
-                    host_v6_addr = ret.second;
-                    if (!cfg._host_config.ipv4_domains.empty() && ret.first.empty())
-                    {
-                        LOG(WARNING) << "Failed to get host IPv4 address!";
-                        g_running = false;
-                    }
-                    else if (!cfg._host_config.ipv4_domains.empty() && !ret.first.empty())
-                    {
-                        if (!update_dns_records(cfg._host_config, ret.first, true))
-                            LOG(WARNING) << "Failed to update host v4 dns records!";
-                    }
-
-                    if (!cfg._host_config.ipv6_domains.empty() && ret.second.empty())
-                    {
-                        LOG(WARNING) << "Failed to get host IPv6 address!";
-                        g_running = false;
-                    }
-                    else if (!cfg._host_config.ipv6_domains.empty() && !ret.second.empty())
-                    {
-                        if (!update_dns_records(cfg._host_config, ret.second, false))
-                            LOG(WARNING) << "Failed to update host v6 dns records!";
-                    }
-                }
-
-                std::string guest_v6_addr;
-                for (auto & guest : cfg._guest_configs)
-                {
-                    std::pair<std::string, std::string> ret = {};
-                    if (pve_pct_wrapper->isLxcGuest(guest.first))
-                        ret = pve_pct_wrapper->getGuestIp(guest.first, guest.second.iface);
-                    else
-                        ret = pve_api_client->getGuestIp(guest.second.node, guest.first, guest.second.iface);
-                    if (!ret.second.empty() && guest_v6_addr.empty())
-                        guest_v6_addr = ret.second;
-                    if (!guest.second.ipv4_domains.empty() && ret.first.empty())
-                    {
-                        LOG(WARNING) << "Failed to get guest(vmid: " << guest.first << ") IPv4 address!";
-                        g_running = false;
-                    }
-                    else if (!guest.second.ipv4_domains.empty() && !ret.first.empty())
-                    {
-                        if (!update_dns_records(guest.second, ret.first, true))
-                            LOG(WARNING) << "Failed to update guest(vmid: " << guest.first << ") v4 dns records!";
-                    }
-
-                    if (!guest.second.ipv6_domains.empty() && ret.second.empty())
-                    {
-                        LOG(WARNING) << "Failed to get guest(vmid: " << guest.first << ") IPv6 address!";
-                        g_running = false;
-                    }
-                    else if (!guest.second.ipv6_domains.empty() && !ret.second.empty())
-                    {
-                        if (!update_dns_records(guest.second, ret.second, false))
-                            LOG(WARNING) << "Failed to update guest(vmid: " << guest.first << ") v6 dns records!";
-                    }
-                }
-
-                if ((!cfg._host_config.ipv4_domains.empty() || !cfg._host_config.ipv6_domains.empty()) &&
-                    cfg._sync_host_static_v6_address)
-                    if (!sync_host_static_v6_address(pve_api_client, host_v4_addr, host_v6_addr, guest_v6_addr))
-                        LOG(WARNING) << "Failed to sync host static IPv6 address!";
+                update_host(pve_api_client, host_v4_addr, host_v6_addr);
+                update_guests(pve_api_client, pve_pct_wrapper, host_v4_addr, host_v6_addr);
             }
             else if (!cfg._service_mode)
                 break;

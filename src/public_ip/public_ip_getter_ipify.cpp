@@ -1,7 +1,6 @@
 #include "public_ip_getter_ipify.h"
 
 #include "glog/logging.h"
-#include "fmt/format.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 
