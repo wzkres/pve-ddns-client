@@ -614,13 +614,16 @@ static void update_client()
 static void update_host(const std::shared_ptr<PveApiClient> & pve_api_client,
                         std::string & host_v4_addr, std::string & host_v6_addr)
 {
-    if (nullptr == pve_api_client)
+    const Config & cfg = Config::getInstance();
+    const bool enabled = !cfg._host_config.ipv4_domains.empty() || !cfg._host_config.ipv6_domains.empty();
+
+    if (nullptr == pve_api_client && enabled)
     {
-        LOG(WARNING) << "Invalid pve_api_client!";
+        LOG(WARNING) << "Invalid pve_api_client while host update is needed!";
         return;
     }
-    const Config & cfg = Config::getInstance();
-    if (!cfg._host_config.ipv4_domains.empty() || !cfg._host_config.ipv6_domains.empty())
+
+    if (enabled)
     {
         auto ret = pve_api_client->getHostIp(cfg._host_config.node, cfg._host_config.iface);
         host_v4_addr = ret.first;
@@ -653,13 +656,15 @@ static void update_guests(const std::shared_ptr<PveApiClient> & pve_api_client,
                           const std::shared_ptr<PvePctWrapper> & pve_pct_wrapper,
                           const std::string & host_v4_addr, const std::string & host_v6_addr)
 {
-    if (nullptr == pve_api_client || nullptr == pve_pct_wrapper)
+    const Config & cfg = Config::getInstance();
+
+    if ((nullptr == pve_api_client || nullptr == pve_pct_wrapper) && !cfg._guest_configs.empty())
     {
-        LOG(WARNING) << "Invalid pve_api_client and/or pve_pct_wrapper!";
+        LOG(WARNING) << "Invalid pve_api_client and/or pve_pct_wrapper while guest update is needed!";
         return;
     }
+
     std::string guest_v6_addr;
-    const Config & cfg = Config::getInstance();
     for (auto & guest : cfg._guest_configs)
     {
         std::pair<std::string, std::string> ret = {};
