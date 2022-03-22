@@ -702,10 +702,7 @@ static void update_guests(const std::shared_ptr<PveApiClient> & pve_api_client,
 int main(int argc, char * argv[])
 {
     if (!initialize(argc, argv))
-    {
-        std::cerr << "Failed to initialize!" << std::endl;
         return EXIT_SUCCESS;
-    }
 
     Config & cfg = Config::getInstance();
     LOG(INFO) << "Starting up, ver " << get_version_string() << ", config loaded from '" << cfg._yml_path << "'.";
