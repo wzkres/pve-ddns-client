@@ -325,8 +325,8 @@ static bool update_dns_records_v4(const config_node & config_node, const std::st
                 LOG(WARNING) << "Failed to update IPv4 record from '" << found->second.last_ip << "' to '"
                              << ip << "' of domain '" << domain << "'!";
         }
-        else
-            LOG(INFO) << "IPv4 domain '" << domain << "' dns record address '" << ip << "' not changed.";
+//        else
+//            LOG(INFO) << "IPv4 domain '" << domain << "' dns record address '" << ip << "' not changed.";
     }
     return true;
 }
@@ -364,8 +364,8 @@ static bool update_dns_records_v6(const config_node & config_node, const std::st
                 LOG(WARNING) << "Failed to update IPv6 record from '" << found->second.last_ip << "' to '"
                              << ip << "' of domain '" << domain << "'!";
         }
-        else
-            LOG(INFO) << "IPv6 domain '" << domain << "' dns record address '" << ip << "' not changed.";
+//        else
+//            LOG(INFO) << "IPv6 domain '" << domain << "' dns record address '" << ip << "' not changed.";
     }
     return true;
 }
@@ -434,7 +434,7 @@ static bool sync_host_static_v6_address(const std::shared_ptr<PveApiClient> & pv
     const std::string guest_1st_part = guest_v6_addr.substr(0, guest_4th_colon_pos);
     if (host_1st_part == guest_1st_part)
     {
-        LOG(INFO) << "No need to sync host v6 static address, 1st part '" << host_1st_part << "' not changed.";
+//        LOG(INFO) << "No need to sync host v6 static address, 1st part '" << host_1st_part << "' not changed.";
         return true;
     }
 
