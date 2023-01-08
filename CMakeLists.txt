@@ -63,7 +63,6 @@ else()
     endif()
 endif()
 
-
 add_custom_command(
         TARGET ${PROJECT_NAME}
         POST_BUILD
