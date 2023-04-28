@@ -45,7 +45,7 @@ cd ${script_path}/yaml-cpp
 rm -rf cmake_build
 mkdir cmake_build
 cd cmake_build
-cmake -DCMAKE_CXX_FLAGS="-Wno-deprecated-copy" -DBUILD_SHARED_LIBS=NO -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=${script_path}/prebuilt  ../
+cmake -E env CXXFLAGS="-Wno-deprecated-copy" cmake -DBUILD_SHARED_LIBS=NO -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=${script_path}/prebuilt  ../
 make -j4
 make install
 make clean
