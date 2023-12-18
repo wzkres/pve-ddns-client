@@ -118,7 +118,7 @@ bool PvePctWrapper::execute(const std::string & cmd, std::string & result)
         LOG(WARNING) << "Failed to popen '" << cmd << "'!";
         return false;
     }
-    while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
+    while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr)
         result += buffer.data();
     const int res = pve_pclose(pipe);
     if (res != 0)
