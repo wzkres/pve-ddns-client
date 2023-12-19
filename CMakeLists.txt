@@ -36,13 +36,16 @@ file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.cc")
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-        "3rdparty/cmdline" "3rdparty/fmt/include" "3rdparty/rapidjson/include" "3rdparty/prebuilt/include")
+        "${CMAKE_SOURCE_DIR}/3rdparty/cmdline"
+        "${CMAKE_SOURCE_DIR}/3rdparty/fmt/include"
+        "${CMAKE_SOURCE_DIR}/3rdparty/rapidjson/include"
+        "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/include")
 
-set(LINK_DIRS "3rdparty/prebuilt/lib")
+target_link_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib")
 if(EXISTS ${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib64)
-    list(APPEND ${LINK_DIRS} "3rdparty/prebuilt/lib64")
+    target_link_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib64")
 endif()
-target_link_directories(${PROJECT_NAME} PRIVATE ${LINK_DIRS})
+
 if(WIN32)
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_link_libraries(${PROJECT_NAME} PRIVATE libcurl-d glogd yaml-cppd)
