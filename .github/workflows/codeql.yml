@@ -18,7 +18,11 @@ on:
     branches: [ "main" ]
   # schedule:
   #   - cron: '25 17 * * 6'
-
+  
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+  
 jobs:
   analyze:
     name: Analyze
@@ -61,10 +65,25 @@ jobs:
         # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
 
+    - name: Check 3rdparty prebuilt cache (Linux & macOS)
+      id: cache-nix
+      uses: actions/cache@v2
+      with:
+        path: 3rdparty/prebuilt
+        key: ${{ runner.os }}-${{ matrix.platform }}-build-${{ hashFiles('3rdparty/build.sh') }}
+      if: runner.os == 'Linux' || runner.os == 'macOS'
 
+    - name: Prebuild 3rdparty libs (Linux & macOS)
+      run: |
+        # make file runnable, might not be necessary
+        chmod +x "${GITHUB_WORKSPACE}/3rdparty/build.sh"
+        # run script
+        "${GITHUB_WORKSPACE}/3rdparty/build.sh"
+      if: (runner.os == 'Linux' || runner.os == 'macOS') && steps.cache-nix.outputs.cache-hit != 'true'
+      
     # Autobuild attempts to build any compiled languages (C/C++, C#, Go, Java, or Swift).
     # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
+    # - name: Autobuild
       # uses: github/codeql-action/autobuild@v3
 
     # ℹ️ Command-line programs to run using the OS shell.
@@ -73,16 +92,14 @@ jobs:
     #   If the Autobuild fails above, remove it and uncomment the following three lines.
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
 
-      run: |
-        echo "Run, Build Application using script"
-        # make file runnable, might not be necessary
-        chmod +x "${GITHUB_WORKSPACE}/3rdparty/build.sh"
-        # run script
-        "${GITHUB_WORKSPACE}/3rdparty/build.sh"
-        # cmake
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-        # build
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
