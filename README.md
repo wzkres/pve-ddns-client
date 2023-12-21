@@ -1,6 +1,7 @@
 # pve-ddns-client
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause) 
 [![CMake](https://github.com/wzkres/pve-ddns-client/actions/workflows/cmake.yml/badge.svg)](https://github.com/wzkres/pve-ddns-client/actions/workflows/cmake.yml)
+[![CodeQL](https://github.com/wzkres/pve-ddns-client/actions/workflows/codeql.yml/badge.svg)](https://github.com/wzkres/pve-ddns-client/actions/workflows/codeql.yml)
 
 ## EN
 A Proxmox VE (PVE) dedicated DDNS updater written in C++
