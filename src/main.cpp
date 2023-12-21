@@ -664,16 +664,22 @@ static void update_guests(const std::shared_ptr<PveApiClient> & pve_api_client,
         return;
     }
 
-    std::string guest_v6_addr;
+    std::string kvm_guest_v6_addr, lxc_guest_v6_addr;
     for (auto & guest : cfg._guest_configs)
     {
         std::pair<std::string, std::string> ret = {};
         if (pve_pct_wrapper->isLxcGuest(guest.first))
+        {
             ret = pve_pct_wrapper->getGuestIp(guest.first, guest.second.iface);
+            if (!ret.second.empty() && lxc_guest_v6_addr.empty())
+                lxc_guest_v6_addr = ret.second;
+        }
         else
+        {
             ret = pve_api_client->getGuestIp(guest.second.node, guest.first, guest.second.iface);
-        if (!ret.second.empty() && guest_v6_addr.empty())
-            guest_v6_addr = ret.second;
+            if (!ret.second.empty() && kvm_guest_v6_addr.empty())
+                kvm_guest_v6_addr = ret.second;
+        }
         if (!guest.second.ipv4_domains.empty() && ret.first.empty())
         {
             LOG(WARNING) << "Failed to get guest(vmid: " << guest.first << ") IPv4 address!";
@@ -697,10 +703,15 @@ static void update_guests(const std::shared_ptr<PveApiClient> & pve_api_client,
         }
     }
 
+    std::string guest_v6_addr = kvm_guest_v6_addr.empty() ? lxc_guest_v6_addr : kvm_guest_v6_addr;
     if ((!cfg._host_config.ipv4_domains.empty() || !cfg._host_config.ipv6_domains.empty()) &&
         cfg._sync_host_static_v6_address)
-        if (!sync_host_static_v6_address(pve_api_client, host_v4_addr, host_v6_addr, guest_v6_addr))
+    {
+        if (guest_v6_addr.empty())
+            LOG(WARNING) << "Sync host static IPv6 address enabled but no valid guest IPv6 address!";
+        else if (!sync_host_static_v6_address(pve_api_client, host_v4_addr, host_v6_addr, guest_v6_addr))
             LOG(WARNING) << "Failed to sync host static IPv6 address!";
+    }
 }
 
 // main
