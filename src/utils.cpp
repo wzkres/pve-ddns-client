@@ -1,11 +1,19 @@
 #include "utils.h"
 
-#include <cstring>
 #include <sstream>
+#include <array>
 
 #include "fmt/format.h"
 #include "glog/logging.h"
 #include "curl/curl.h"
+
+#if WIN32
+#define pve_popen _popen
+#define pve_pclose _pclose
+#else
+#define pve_popen popen
+#define pve_pclose pclose
+#endif
 
 //typedef struct curl_read_userdata_
 //{
@@ -236,6 +244,114 @@ bool is_ipv6(const std::string & s)
     return true;
 }
 
+bool get_ip_from_ip_addr_result(const std::string& result, const std::string& iface,
+                                std::string& ipv4, std::string& ipv6)
+{
+    std::istringstream f(result);
+    std::string line;
+    std::string iface_cur;
+
+    ipv4.clear();
+    ipv6.clear();
+
+    while (std::getline(f, line))
+    {
+        if (!ipv4.empty() && !ipv6.empty())
+            return true;
+
+        const char * nptr = line.c_str();
+        char * endptr = nullptr;
+        strtol(nptr, &endptr, 10);
+        if (nptr != endptr)
+        {
+            std::string::size_type iface_begin = endptr - nptr + 2;
+            std::string::size_type iface_end = line.find_first_of(':', iface_begin);
+            if (std::string::npos != iface_end)
+                iface_cur = line.substr(iface_begin, iface_end - iface_begin);
+        }
+        else if (iface_cur.find(iface) != std::string::npos)
+        {
+            std::string::size_type inet6_pos = line.find("inet6 ");
+            if (std::string::npos != inet6_pos)
+            {
+                if (ipv6.empty())
+                {
+                    std::string::size_type v6_ip_end = line.find_first_of('/', inet6_pos + 6);
+                    if (std::string::npos != v6_ip_end)
+                    {
+                        ipv6 = line.substr(inet6_pos + 6, v6_ip_end - inet6_pos - 6);
+                        if (ipv6.compare(0, 4, "fe80") == 0)
+                            ipv6.clear();
+                    }
+                }
+                continue;
+            }
+            std::string::size_type inet_pos = line.find("inet ");
+            if (std::string::npos != inet_pos)
+            {
+                if (ipv4.empty())
+                {
+                    std::string::size_type v4_ip_end = line.find_first_of('/', inet_pos + 5);
+                    if (std::string::npos != v4_ip_end)
+                        ipv4 = line.substr(inet_pos + 5, v4_ip_end - inet_pos - 5);
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+bool get_ip_from_ipconfig_result(const std::string& result, const std::string& iface,
+                                 std::string& ipv4, std::string& ipv6)
+{
+    std::istringstream f(result);
+    std::string line;
+    bool found_iface = false;
+
+    ipv4.clear();
+    ipv6.clear();
+
+    while (std::getline(f, line))
+    {
+        if (!ipv4.empty() && !ipv6.empty())
+            return true;
+
+        if (line.empty())
+            continue;
+
+        if (!found_iface && line.find(iface) != std::string::npos)
+        {
+            found_iface = true;
+            continue;
+        }
+
+        if (found_iface)
+        {
+            if (line.find("IPv6") != std::string::npos && ipv6.empty())
+            {
+                std::string::size_type inet6_pos = line.find(": ");
+                if (std::string::npos != inet6_pos)
+                {
+                    ipv6 = line.substr(inet6_pos + 2);
+                    if (ipv6.compare(0, 4, "fe80") == 0)
+                        ipv6.clear();
+                }
+            }
+            else if (line.find("IPv4") != std::string::npos && ipv4.empty())
+            {
+                std::string::size_type inet4_pos = line.find(": ");
+                if (std::string::npos != inet4_pos)
+                {
+                    ipv4 = line.substr(inet4_pos + 2);
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 bool http_req(const std::string & url, const std::string & req_data, long timeout_ms,
               const std::vector<std::string> & custom_headers,
               int & resp_code, std::string & resp_data)
@@ -307,7 +423,7 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
         if (curl_ret != CURLcode::CURLE_OK)
         {
             LOG(WARNING) << "curl_easy_perform fail, curl code is '" << curl_ret << "', error is '" << errbuf
-            << "', url is '" << url << "'!";
+                         << "', url is '" << url << "'!";
             break;
         }
         ret = true;
@@ -327,4 +443,29 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
     curl_easy_cleanup(curl);
 
     return ret;
+}
+
+bool shell_execute(const std::string& cmd, std::string& result)
+{
+    if (cmd.empty())
+    {
+        LOG(WARNING) << "Invalid cmd!";
+        return false;
+    }
+    std::array<char, 128> buffer = {};
+    FILE * pipe = pve_popen(cmd.c_str(), "r");
+    if (nullptr == pipe)
+    {
+        LOG(WARNING) << "Failed to popen '" << cmd << "'!";
+        return false;
+    }
+    while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr)
+        result += buffer.data();
+    const int res = pve_pclose(pipe);
+    if (res != 0)
+    {
+        LOG(WARNING) << "Error pclose result '" << res << "' from execution of '" << cmd << "'!";
+        return false;
+    }
+    return true;
 }

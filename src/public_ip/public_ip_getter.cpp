@@ -3,6 +3,7 @@
 #include "glog/logging.h"
 
 #include "../utils.h"
+#include "public_ip_getter_iface.h"
 #include "public_ip_getter_porkbun.h"
 #include "public_ip_getter_ipify.h"
 
@@ -12,6 +13,17 @@ IPublicIpGetter * PublicIpGetterFactory::create(const std::string & service_name
     {
         LOG(WARNING) << "Invalid service_name!";
         return nullptr;
+    }
+
+    if (str_iequals(service_name, PUBLIC_IP_GETTER_IFACE))
+    {
+        auto * getter = new(std::nothrow) PublicIpGetterIface();
+        if (nullptr == getter)
+        {
+            LOG(ERROR) << "Failed to instantiate PublicIpGetterIface!";
+            return nullptr;
+        }
+        return getter;
     }
 
     if (str_iequals(service_name, PUBLIC_IP_GETTER_PORKBUN))
@@ -50,7 +62,14 @@ void PublicIpGetterFactory::destroy(IPublicIpGetter * ip_getter)
     }
 
     const std::string & name = ip_getter->getServiceName();
-    if (str_iequals(name, PUBLIC_IP_GETTER_PORKBUN))
+    if (str_iequals(name, PUBLIC_IP_GETTER_IFACE))
+    {
+        auto * g = dynamic_cast<PublicIpGetterIface *>(ip_getter);
+        if (nullptr == g)
+            LOG(WARNING) << "ip_getter is not instance of PublicIpGetterIface!";
+        delete g;
+    }
+    else if (str_iequals(name, PUBLIC_IP_GETTER_PORKBUN))
     {
         auto * g = dynamic_cast<PublicIpGetterPorkbun *>(ip_getter);
         if (nullptr == g)

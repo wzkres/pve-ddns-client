@@ -4,6 +4,7 @@
 #include <string>
 
 /// Public IP getter implementations
+constexpr const char * PUBLIC_IP_GETTER_IFACE = "iface";
 constexpr const char * PUBLIC_IP_GETTER_PORKBUN = "porkbun";
 constexpr const char * PUBLIC_IP_GETTER_IPIFY = "ipify";
 
