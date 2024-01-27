@@ -271,6 +271,9 @@ bool get_ip_from_ip_addr_result(const std::string& result, const std::string& if
         }
         else if (iface_cur.find(iface) != std::string::npos)
         {
+            std::string:size_type deprecated_pos = line.find("deprecated");
+            if (std::string::npos != deprecated_pos)
+                continue;
             std::string::size_type inet6_pos = line.find("inet6 ");
             if (std::string::npos != inet6_pos)
             {
