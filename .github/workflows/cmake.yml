@@ -23,13 +23,13 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     
     - name: Check 3rdparty prebuilt cache (Linux & macOS)
       id: cache-nix
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: 3rdparty/prebuilt
         key: ${{ runner.os }}-${{ matrix.platform }}-build-${{ hashFiles('3rdparty/build.sh') }}
@@ -37,7 +37,7 @@ jobs:
     
     - name: Check 3rdparty prebuilt cache (Windows)
       id: cache-win
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: 3rdparty/prebuilt
         key: ${{ runner.os }}-${{ matrix.platform }}-build-${{ hashFiles('3rdparty/build.bat') }}
@@ -75,7 +75,7 @@ jobs:
     #  run: pve-ddns-client
     
     - name: Upload artifact (Linux & macOS)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ runner.os }}-artifact
         path: |
@@ -84,7 +84,7 @@ jobs:
       if: runner.os == 'Linux' || runner.os == 'macOS'
 
     - name: Upload artifact (Windows)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ runner.os }}-artifact
         path: |
