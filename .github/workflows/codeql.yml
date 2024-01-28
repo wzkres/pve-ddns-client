@@ -67,7 +67,7 @@ jobs:
 
     - name: Check 3rdparty prebuilt cache (Linux & macOS)
       id: cache-nix
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: 3rdparty/prebuilt
         key: ${{ runner.os }}-${{ matrix.platform }}-build-${{ hashFiles('3rdparty/build.sh') }}
@@ -118,7 +118,7 @@ jobs:
         output: sarif-results/cpp.sarif
 
     - name: Upload SARIF
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: sarif-results/cpp.sarif
         category: "/language:${{matrix.language}}"        
