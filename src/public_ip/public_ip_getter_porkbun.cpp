@@ -8,7 +8,7 @@
 #include "../utils.h"
 #include "../config.h"
 
-static const char * API_HOST = "https://porkbun.com/api/json/v3/";
+static const char * API_HOST = "https://api.porkbun.com/api/json/v3/";
 static const char * API_HOST_V4 = "https://api-ipv4.porkbun.com/api/json/v3/";
 static const char * API_PING = "ping";
 
