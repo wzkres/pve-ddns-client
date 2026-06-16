@@ -1,7 +1,7 @@
 #include "config.h"
 
 #include <iostream>
-
+#define YAML_CPP_STATIC_DEFINE
 #include "yaml-cpp/yaml.h"
 
 // Parse general config from yaml node
