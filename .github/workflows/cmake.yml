@@ -56,6 +56,7 @@ jobs:
       if: (runner.os == 'Linux' || runner.os == 'macOS') && steps.cache-nix.outputs.cache-hit != 'true'
       
     - name: Prebuild 3rdparty libs (Windows)
+      shell: cmd
       run: |
         cmd /k "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
         .\build.bat
