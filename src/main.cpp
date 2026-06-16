@@ -516,7 +516,7 @@ static bool initialize(int argc, char * argv[])
 
     FLAGS_log_dir = cfg._log_path;
     FLAGS_alsologtostderr = true;
-    fLI::FLAGS_max_log_size = cfg._max_log_size_mb;
+    fLU::FLAGS_max_log_size = static_cast<google::uint32>(cfg._max_log_size_mb);
     fLI::FLAGS_logbufsecs = cfg._log_buf_secs;
 
     google::SetLogFilenameExtension(".log");
@@ -527,7 +527,8 @@ static bool initialize(int argc, char * argv[])
     google::SetLogDestination(google::GLOG_ERROR, "");
     google::SetLogDestination(google::GLOG_FATAL, "");
     google::SetLogDestination(google::GLOG_WARNING, "");
-    google::EnableLogCleaner(cfg._log_overdue_days);
+    // EnableLogCleaner expects a std::chrono::minutes overload (type-safe)
+    google::EnableLogCleaner(std::chrono::minutes(static_cast<long long>(cfg._log_overdue_days) * 24LL * 60LL));
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
 

@@ -12,6 +12,7 @@ option(MIPS_TARGET "Building for mips target" OFF)
 
 add_definitions(-DFMT_HEADER_ONLY)
 add_definitions(-DCURL_STATICLIB)
+add_definitions(-DGLOG_USE_GLOG_EXPORT)
 if(WIN32)
     add_definitions(-DHAVE_SNPRINTF)
 endif()
