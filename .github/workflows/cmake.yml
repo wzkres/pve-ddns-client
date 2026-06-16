@@ -19,7 +19,7 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     strategy:
       matrix:
-        platform: [ubuntu-22.04, macos-14]
+        platform: [ubuntu-22.04, macos-14, windows-2022]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -57,7 +57,7 @@ jobs:
       
     - name: Prebuild 3rdparty libs (Windows)
       run: |
-        cmd /k "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        cmd /k "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
         .\build.bat
       working-directory: .\3rdparty
       if: runner.os == 'Windows' && steps.cache-win.outputs.cache-hit != 'true'
