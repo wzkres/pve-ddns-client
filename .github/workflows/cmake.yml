@@ -57,9 +57,9 @@ jobs:
       
     - name: Prebuild 3rdparty libs (Windows)
       shell: cmd
-      run: |
-        cmd /k "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        .\build.bat
+      #run: |
+      #  cmd /k "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+      run: .\build.bat
       working-directory: .\3rdparty
       if: runner.os == 'Windows' && steps.cache-win.outputs.cache-hit != 'true'
     
