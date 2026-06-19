@@ -41,7 +41,7 @@ jobs:
     
     - name: Check 3rdparty prebuilt cache (Windows)
       id: cache-win
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: 3rdparty/prebuilt
         key: ${{ runner.os }}-${{ matrix.platform }}-build-${{ hashFiles('3rdparty/build.bat') }}
@@ -80,7 +80,7 @@ jobs:
     #  run: pve-ddns-client
     
     - name: Upload artifact (Linux & macOS)
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ runner.os }}-artifact
         path: |
@@ -89,7 +89,7 @@ jobs:
       if: runner.os == 'Linux' || runner.os == 'macOS'
 
     - name: Upload artifact (Windows)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ runner.os }}-artifact
         path: |
