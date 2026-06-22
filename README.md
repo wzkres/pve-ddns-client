@@ -3,77 +3,94 @@
 [![CMake](https://github.com/wzkres/pve-ddns-client/actions/workflows/cmake.yml/badge.svg)](https://github.com/wzkres/pve-ddns-client/actions/workflows/cmake.yml)
 [![CodeQL](https://github.com/wzkres/pve-ddns-client/actions/workflows/codeql.yml/badge.svg)](https://github.com/wzkres/pve-ddns-client/actions/workflows/codeql.yml)
 
-## EN
-A Proxmox VE (PVE) dedicated DDNS updater written in C++
-### Detailed description
-**pve-ddns-client** is a DDNS updater designed specifically for the Proxmox VE (PVE) virtualization management platform. Generally deployed in the PVE host system, it is used to update DDNS domain records for host and all guests (including KVM and LXC guests). Also it can be deployed on any device that can access the PVE host API (in this case, DDNS updating of LXC guests will not work, since pct command line tool can only be accessed from the PVE host system). It can even be deployed as a normal DDNS updater (when only the client section is specified in the configuration file).
-### Usage
-- pve-ddns-client.yml yaml config file
+# English Documentation
+
+A lightweight Dynamic DNS (DDNS) update service written in C++ and designed specifically for Proxmox VE.
+
+## Overview
+
+This application is designed to automatically update DNS records when dynamic IP addresses (DHCP) change for Proxmox VE (hereinafter referred to as **PVE**) hosts and guests.
+
+It is typically deployed on a PVE host system, where it can simultaneously manage DDNS updates for:
+
+* The PVE host itself
+* KVM virtual machines
+* LXC containers
+
+The application can also be deployed on any device capable of accessing the PVE API. In this scenario, DDNS updates for PVE hosts and KVM guests remain functional, but LXC guest updates are unavailable because the application cannot invoke the `pct` command outside the PVE host.
+
+Alternatively, it can be used as a standard DDNS client on any system by configuring only the `client` section, making it suitable for conventional DDNS use cases on Windows, macOS, Linux, and other platforms.
+
+## Usage
+
+### Complete Configuration File Example (`pve-ddns-client.yml`)
+
 ```yaml
 # General configuration
 general:
-  # Update interval in milliseconds, only for service mode
+  # Update interval in milliseconds (effective only in service mode)
   update-interval-ms: 300000
-  # Log overdue days
+  # Log retention period in days
   log-overdue-days: 3
-  # Log buffer seconds
+  # Log buffering time in seconds
   log-buf-secs: 2
-  # Max size per log file in megabytes
+  # Maximum log file size in MB before rotation
   max-log-size-mb: 2
-  # Long-running service mode
+  # Run as a background service
   service-mode: true
-  # Public IP getter
+  # Public IP detection configuration
   public-ip:
-    # Service type: porkbun, ipify
+    # Supported services: porkbun, ipify
     service: porkbun
-    # Credentials
+    # Authentication credentials
     # porkbun: api_key,secret_key
-    # ipify: leave empty
+    # ipify: no authentication required
     credentials: api_key,secret_key
-  # PVE API access
+  # Proxmox VE API configuration
   pve-api:
-    # API root url
+    # API endpoint
     host: https://pve.domain.com:8006
     # Username
     user: root
-    # Realm
+    # Authentication realm
     realm: pam
-    # Token ID
+    # API Token ID
     token-id: ddns
-    # Token UUID
+    # API Token UUID
     token-uuid: uuid
-  # Special feature for syncing host static IPv6 address with guest DHCP IPv6 address
+  # Special feature:
+  # Synchronize the host's static IPv6 address with a guest VM's dynamic IPv6 address.
+  # Useful when the PVE host cannot obtain an IPv6 address via SLAAC or DHCPv6.
   sync_host_static_v6_address: false
-# Client DDNS configuration (when working as a normal DDNS updater)
+# DDNS configuration for the machine running this application.
+# This machine does not have to be a PVE host.
+# When only this section is configured, the application behaves like a standard DDNS client,
+# obtaining public IPv4/IPv6 addresses through the configured public-ip service.
 client:
-  # DNS service type: porkbun, dnspod, cloudflare
+  # Supported providers: porkbun, dnspod, cloudflare
   dns: dnspod
-  # Credentials
+  # Authentication credentials
   # porkbun: api_key,secret_key
   # dnspod: token_id,token
   # cloudflare: api_token
   credentials: token_id,token
-  # IPv4 (A record) domains
+  # IPv4 A records to update
   ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
-  # IPv6 (AAAA record) domains
+  # IPv6 AAAA records to update
   ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
-# PVE host DDNS configuration
+# DDNS configuration for the PVE host
+# The application retrieves IPv4/IPv6 addresses directly from the specified host interface via the PVE API.
 host:
-  # Node name
   node: node
-  # Network interface name
   iface: vmbr0
-  # DNS service type, refer to client section
   dns: porkbun
-  # Credentials, refer to client section
   credentials: api_key,secret_key
-  # IPv4 (A record) domains
   ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
-  # IPv6 (AAAA record) domains
   ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
-# PVE guest DDNS configuration, basically same as host section with an additional VM id
+# DDNS configuration for PVE guest systems
+# Similar to the host configuration, with an additional vmid field.
 guests:
-  # KVM guest example
+  # Example: KVM virtual machine
   - node: node
     vmid: 100
     iface: ens18
@@ -81,7 +98,8 @@ guests:
     credentials: api_key,secret_key
     ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
     ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
-  # LXC guest example (must run inside PVE host system for this to work)
+  # Example: LXC container
+  # Requires the application to be running on the PVE host.
   - node: node
     vmid: 101
     iface: eth0
@@ -90,19 +108,45 @@ guests:
     ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
     ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
 ```
-- Command line parameters
-```
-usage: ./pve-ddns-client [options] ... 
-options:
-  -v, --version    Print version
-  -h, --help       Show usage
-  -c, --config     Config yaml file to load (string [=./pve-ddns-client.yml])
-  -l, --log        Log file path (string [=./])
-```
-### Build
-Please refer to GitHub Actions workflow：https://github.com/wzkres/pve-ddns-client/blob/main/.github/workflows/cmake.yml
+### Command Line Options
+```text
+usage: ./pve-ddns-client [options] ...
 
-## CN
+options:
+  -v, --version    Show version information
+  -h, --help       Show help information
+  -c, --config     Specify configuration file (default: ./pve-ddns-client.yml)
+  -l, --log        Specify log directory (default: ./)
+```
+### Example systemd Service for a PVE Host
+Place the following file at:
+```text
+/lib/systemd/system/pve-ddns-client.service
+```
+```ini
+[Unit]
+Description=A Proxmox VE dedicated DDNS updater
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+User=root
+ExecStart=/root/pve-ddns-client/pve-ddns-client -c /root/pve-ddns-client/pve-ddns-client.yml -l /root/pve-ddns-client/log
+
+[Install]
+WantedBy=multi-user.target
+```
+
+## Building
+Please refer to the GitHub Actions workflow:
+https://github.com/wzkres/pve-ddns-client/blob/main/.github/workflows/cmake.yml
+To build successfully, ensure that your build environment provides the same compiler toolchain and dependency versions as the GitHub CI environment.
+
+
+## 中文说明
 一款专为Proxmox VE设计，C++编写的轻量型DDNS更新服务程序
 ### 详细介绍
 本程序用于配合Proxmox VE（以下简称PVE）虚拟化环境下的宿主机和客户机动态IP（DHCP）变化，自动更新相关域名记录。一般部署于PVE宿主系统中（可同时支持宿主、KVM客户、LXC客户系统的动态IP域名更新），也可部署在任意可访问到PVE宿主API的设备上（此时由于无法调用宿主系统上的pct命令行工具，所有LXC客户系统将无法正常更新DDNS域名），甚至可以作为普通DDNS更新程序部署在任何设备上（配置文件中仅指定client配置）。
@@ -150,7 +194,7 @@ client:
   # 鉴权信息
   # porkbun为 api_key,secret_key 的格式
   # dnspod为 token_id,token 的格式
-  # cloudflare诶 api_token 的格式
+  # cloudflare为 api_token 的格式
   credentials: token_id,token
   # 所有需要更新IPv4 A记录的域名
   ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
