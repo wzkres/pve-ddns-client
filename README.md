@@ -103,13 +103,13 @@ options:
 Please refer to GitHub Actions workflow：https://github.com/wzkres/pve-ddns-client/blob/main/.github/workflows/cmake.yml
 
 ## CN
-一款C++开发的针对Proxmox VE环境的DDNS自动更新程序
+一款专为Proxmox VE设计，C++编写的轻量型DDNS更新服务程序
 ### 详细介绍
 本程序用于配合Proxmox VE（以下简称PVE）虚拟化环境下的宿主机和客户机动态IP（DHCP）变化，自动更新相关域名记录。一般部署于PVE宿主系统中（可同时支持宿主、KVM客户、LXC客户系统的动态IP域名更新），也可部署在任意可访问到PVE宿主API的设备上（此时由于无法调用宿主系统上的pct命令行工具，所有LXC客户系统将无法正常更新DDNS域名），甚至可以作为普通DDNS更新程序部署在任何设备上（配置文件中仅指定client配置）。
 ### 使用说明
-- pve-ddns-client.yml 配置文件说明：
+- pve-ddns-client.yml 完整配置文件说明：
 ```yaml
-# 通用配置
+# 通用配置部分
 general:
   # 更新间隔时间，单位毫秒，仅服务模式时有效
   update-interval-ms: 300000
@@ -141,9 +141,9 @@ general:
     token-id: ddns
     # Token UUID
     token-uuid: uuid
-  # 特殊功能，根据VM的动态IPv6地址，更新宿主系统的静态IPv6地址
+  # 特殊功能，根据VM的动态IPv6地址，更新宿主系统的静态IPv6地址(适用于PVE宿主无法SLAAC或DHCP获取V6地址的情况)
   sync_host_static_v6_address: false
-# 客户端DDNS配置（运行本程序的系统，不一定是PVE的宿主，此时本程序工作方式与一般DDNS更新程序类似）
+# 客户端DDNS配置部分（运行本程序的系统，不一定是PVE的宿主，只填写此部分配置时本程序工作方式与普通DDNS更新程序工作方式类似，通过general配置中的public-ip指定的服务获取公网v4、v6地址并更新指定的域名解析记录，可用于如Windows、Mac系统的常规DDNS更新）
 client:
   # 服务类型，可选值为 porkbun, dnspod, cloudflare
   dns: dnspod
@@ -156,7 +156,7 @@ client:
   ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
   # 所有需要更新IPv6 AAAA记录的域名
   ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
-# PVE宿主DDNS配置
+# PVE宿主DDNS配置部分（直接通过PVE API获取指定网卡的v4、v6地址用于更新指定的域名解析记录）
 host:
   # node名
   node: node
@@ -170,7 +170,7 @@ host:
   ipv4: ["v4sub1.domain.com", "v4sub2.domain.com"]
   # 所有需要更新IPv6 AAAA记录的域名
   ipv6: ["v6sub1.domain.com", "v6sub2.domain.com"]
-# PVE客户虚拟机DDNS配置，除需指定vmid外，其它配置项与host一致
+# PVE客户虚拟机DDNS配置部分，除需指定vmid外，其它配置项与host一致（运行于PVE宿主系统，直接通过PVE API获取指定虚机的指定网卡的v4、v6地址用于更新指定的域名解析记录）
 guests:
   # KVM客户系统节点示例
   - node: node
@@ -198,5 +198,22 @@ options:
   -c, --config     指定配置文件(默认 ./pve-ddns-client.yml)
   -l, --log        指定日志保存位置(默认 ./)
 ```
-### 构建
-请参考GitHub Actions workflow：https://github.com/wzkres/pve-ddns-client/blob/main/.github/workflows/cmake.yml
+- PVE宿主系统systemd服务示例（置于：/lib/systemd/system/pve-ddns-client.service）
+```
+[Unit]
+Description=A Proxmox VE dedicated DDNS updater
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+User=root
+ExecStart=/root/pve-ddns-client/pve-ddns-client -c /root/pve-ddns-client/pve-ddns-client.yml -l /root/pve-ddns-client/log
+
+[Install]
+WantedBy=multi-user.target
+```
+### 构建方式
+请参考GitHub Actions workflow：https://github.com/wzkres/pve-ddns-client/blob/main/.github/workflows/cmake.yml ，需保证编译环境具备与GitHub CI环境一致的编译工具等依赖项
