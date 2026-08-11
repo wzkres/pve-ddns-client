@@ -63,13 +63,13 @@ if(WIN32)
     set_property(TARGET ${PROJECT_NAME} PROPERTY
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 elseif(APPLE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE curl fmt spdlog-2.0 yaml-cpp ssl crypto z pthread dl
+    target_link_libraries(${PROJECT_NAME} PRIVATE curl fmt spdlog yaml-cpp ssl crypto z pthread dl
         ${LIB_FOUNDATION} ${LIB_SYSTEMCONFIGURATION})
 else()
     if(MIPS_TARGET)
-        target_link_libraries(${PROJECT_NAME} PRIVATE curl fmt spdlog-2.0 yaml-cpp ssl crypto pthread dl)
+        target_link_libraries(${PROJECT_NAME} PRIVATE curl fmt spdlog yaml-cpp ssl crypto pthread dl)
     else()
-        target_link_libraries(${PROJECT_NAME} PRIVATE curl fmt spdlog-2.0 yaml-cpp ssl crypto z pthread dl)
+        target_link_libraries(${PROJECT_NAME} PRIVATE curl fmt spdlog yaml-cpp ssl crypto z pthread dl)
     endif()
 endif()
 
