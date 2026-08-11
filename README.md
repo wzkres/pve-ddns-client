@@ -30,12 +30,14 @@ Alternatively, it can be used as a standard DDNS client on any system by configu
 general:
   # Update interval in milliseconds (effective only in service mode)
   update-interval-ms: 300000
-  # Log retention period in days
-  log-overdue-days: 3
-  # Log buffering time in seconds
-  log-buf-secs: 2
-  # Maximum log file size in MB before rotation
+  # Number of log files to retain during rolling
+  max-log-files: 5
+  # Maximum log file size in in megabytes (MB) before rotation
   max-log-size-mb: 2
+  # Log level: trace debug info warn err critical off
+  log-level: info
+  # spdlog log pattern
+  spdlog-pattern: "[%Y-%m-%d %H:%M:%S.%e][P%P-T%t][%L][%s:%#] %v"  
   # Run as a background service
   service-mode: true
   # Public IP detection configuration
@@ -157,12 +159,14 @@ To build successfully, ensure that your build environment provides the same comp
 general:
   # 更新间隔时间，单位毫秒，仅服务模式时有效
   update-interval-ms: 300000
-  # 日志保留时间，单位天
-  log-overdue-days: 3
-  # 日志缓冲时间，单位秒
-  log-buf-secs: 2
+  # 日志文件滚动保留数量
+  max-log-files: 5
   # 日志文件滚动大小，单位兆
   max-log-size-mb: 2
+  # 日志级别，trace debug info warn err critical off
+  log-level: info
+  # spdlog日志格式
+  spdlog-pattern: "[%Y-%m-%d %H:%M:%S.%e][P%P-T%t][%L][%s:%#] %v"  
   # 是否作为服务模式启动
   service-mode: true
   # 公网IP获取方式
