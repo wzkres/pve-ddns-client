@@ -1,6 +1,6 @@
 #include "dns_service.h"
 
-#include "glog/logging.h"
+#include "spdlog/spdlog.h"
 
 #include "../utils.h"
 #include "dns_service_porkbun.h"
@@ -11,7 +11,7 @@ IDnsService * DnsServiceFactory::create(const std::string & service_name)
 {
     if (service_name.empty())
     {
-        LOG(WARNING) << "Invalid service_name!";
+        SPDLOG_WARN("Invalid service_name!");
         return nullptr;
     }
 
@@ -20,7 +20,7 @@ IDnsService * DnsServiceFactory::create(const std::string & service_name)
         auto * service = new(std::nothrow) DnsServicePorkbun();
         if (nullptr == service)
         {
-            LOG(ERROR) << "Failed to instantiate DnsServicePorkbun!";
+            SPDLOG_ERROR("Failed to instantiate DnsServicePorkbun!");
             return nullptr;
         }
         return service;
@@ -31,7 +31,7 @@ IDnsService * DnsServiceFactory::create(const std::string & service_name)
         auto * service = new(std::nothrow) DnsServiceDnspod();
         if (nullptr == service)
         {
-            LOG(ERROR) << "Failed to instantiate DnsServiceDnspod!";
+            SPDLOG_ERROR("Failed to instantiate DnsServiceDnspod!");
             return nullptr;
         }
         return service;
@@ -42,13 +42,13 @@ IDnsService * DnsServiceFactory::create(const std::string & service_name)
         auto * service = new(std::nothrow) DnsServiceCloudflare();
         if (nullptr == service)
         {
-            LOG(ERROR) << "Failed to instantiate DnsServiceCloudflare!";
+            SPDLOG_ERROR("Failed to instantiate DnsServiceCloudflare!");
             return nullptr;
         }
         return service;
     }
 
-    LOG(WARNING) << "Unsupported dns service '" << service_name << "'!";
+    SPDLOG_WARN("Unsupported dns service '{}'!", service_name);
 
     return nullptr;
 }
@@ -57,7 +57,7 @@ void DnsServiceFactory::destroy(IDnsService * dns_service)
 {
     if (nullptr == dns_service)
     {
-        LOG(WARNING) << "Invalid param!";
+        SPDLOG_WARN("Invalid param!");
         return;
     }
 
@@ -66,23 +66,23 @@ void DnsServiceFactory::destroy(IDnsService * dns_service)
     {
         auto * g = dynamic_cast<DnsServicePorkbun *>(dns_service);
         if (nullptr == g)
-            LOG(WARNING) << "dns_service is not instance of DnsServicePorkbun!";
+            SPDLOG_WARN("dns_service is not instance of DnsServicePorkbun!");
         delete g;
     }
     else if (str_iequals(name, DNS_SERVICE_DNSPOD))
     {
         auto * g = dynamic_cast<DnsServiceDnspod *>(dns_service);
         if (nullptr == g)
-            LOG(WARNING) << "dns_service is not instance of DnsServiceDnspod!";
+            SPDLOG_WARN("dns_service is not instance of DnsServiceDnspod!");
         delete g;
     }
     else if (str_iequals(name, DNS_SERVICE_CLOUDFLARE))
     {
         auto * g = dynamic_cast<DnsServiceCloudflare *>(dns_service);
         if (nullptr == g)
-            LOG(WARNING) << "dns_service is not instance of DnsServiceCloudflare";
+            SPDLOG_WARN("dns_service is not instance of DnsServiceCloudflare");
         delete g;
     }
     else
-        LOG(WARNING) << "Unsupported dns service '" << name << "'!";
+        SPDLOG_WARN("Unsupported dns service '{}'!", name);
 }

@@ -6,6 +6,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include "spdlog/spdlog.h"
+
 // Config node
 typedef struct config_node_
 {
@@ -55,12 +57,16 @@ public:
 
     // Update interval
     std::chrono::milliseconds _update_interval = std::chrono::milliseconds(300000);
-    // Log cleaner keep days
-    int _log_overdue_days = 3;
-    // Default realtime logging output
-    int _log_buf_secs = 0;
+
+    // Max log files to keep
+    int _max_log_files = 5;
     // Max size in MB per log file
     int _max_log_size_mb = 2;
+    // spdlog log level
+    spdlog::level _log_level = spdlog::level::info;
+    // spdlog log pattern
+    std::string _spdlog_pattern = "[%Y-%m-%d %H:%M:%S.%e][P%P-T%t][%L][%s:%#] %v";
+
     // Long-running service mode
     bool _service_mode = true;
 

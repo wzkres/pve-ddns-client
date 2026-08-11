@@ -12,12 +12,32 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
         const auto interval_ms = yaml_node["update-interval-ms"].as<uint64_t>();
         config._update_interval = std::chrono::milliseconds(interval_ms);
     }
-    if (yaml_node["log-overdue-days"])
-        config._log_overdue_days = yaml_node["log-overdue-days"].as<int>();
-    if (yaml_node["log-buf-secs"])
-        config._log_buf_secs = yaml_node["log-buf-secs"].as<int>();
+    if (yaml_node["max-log-files"])
+        config._max_log_files = yaml_node["max-log-files"].as<int>();
     if (yaml_node["max-log-size-mb"])
         config._max_log_size_mb = yaml_node["max-log-size-mb"].as<int>();
+    if (yaml_node["log-level"])
+    {
+        const std::string & lvl = yaml_node["log-level"].as<std::string>();
+        if ("trace" == lvl)
+            config._log_level = spdlog::level::trace;
+        else if ("debug" == lvl)
+            config._log_level = spdlog::level::debug;
+        else if ("info" == lvl)
+            config._log_level = spdlog::level::info;
+        else if ("warn" == lvl)
+            config._log_level = spdlog::level::warn;
+        else if ("err" == lvl)
+            config._log_level = spdlog::level::err;
+        else if ("critical" == lvl)
+            config._log_level = spdlog::level::critical;
+        else if ("off" == lvl)
+            config._log_level = spdlog::level::off;
+        else
+            std::cerr << "Unknown log level: " << lvl << std::endl;
+    }
+    if (yaml_node["spdlog-pattern"])
+        config._spdlog_pattern = yaml_node["spdlog-pattern"].as<std::string>();
     if (yaml_node["service-mode"])
     {
         const auto val = yaml_node["service-mode"].as<std::string>();
@@ -138,6 +158,14 @@ bool Config::loadConfig(const std::string & config_file)
         }
 
         conf_valid = true;
+    }
+    catch (const YAML::ParserException & ex)
+    {
+        std::cerr << "Failed to load config yaml file '" << config_file << "', " << ex.what() << "!" << std::endl;
+    }
+    catch (const YAML::BadFile & ex)
+    {
+        std::cerr << "Failed to load config yaml file '" << config_file << "', " << ex.what() << "!" << std::endl;
     }
     catch (...)
     {

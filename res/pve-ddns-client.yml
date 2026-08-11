@@ -1,8 +1,9 @@
 general:
   update-interval-ms: 300000
-  log-overdue-days: 3
-  log-buf-secs: 2
+  max-log-files: 5
   max-log-size-mb: 2
+  log-level: info
+  spdlog-pattern: "[%Y-%m-%d %H:%M:%S.%e][P%P-T%t][%L][%s:%#] %v"
   service-mode: true
   public-ip:
     service: porkbun

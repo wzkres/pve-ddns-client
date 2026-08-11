@@ -4,7 +4,7 @@
 #include <array>
 
 #include "fmt/format.h"
-#include "glog/logging.h"
+#include "spdlog/spdlog.h"
 #include "curl/curl.h"
 
 #if WIN32
@@ -25,13 +25,12 @@ static size_t write_string_callback(const void * bufptr, size_t size, size_t nit
 {
     if (nullptr == bufptr || nullptr == userp)
     {
-        LOG(WARNING) << "Invalid curl write callback function params bufptr and/or userp!";
+        SPDLOG_WARN("Invalid curl write callback function params bufptr and/or userp!");
         return nitems;
     }
     if (size < 1 || nitems < 1)
     {
-        LOG(WARNING) << "Invalid curl write callback function params, size is '" << size
-        << "', nitems is '" << nitems << "'!";
+        SPDLOG_WARN("Invalid curl write callback function params, size is '{}', nitems is '{}'!", size, nitems);
         return nitems;
     }
 
@@ -44,13 +43,12 @@ static size_t write_string_callback(const void * bufptr, size_t size, size_t nit
 //{
 //    if (nullptr == bufptr || nullptr == userp)
 //    {
-//        LOG(WARNING) << "Invalid curl read callback function params bufptr and/pr userp!";
+//        SPDLOG_WARN("Invalid curl read callback function params bufptr and/pr userp!");
 //        return nitems;
 //    }
 //    if (size < 1 || nitems < 1)
 //    {
-//        LOG(WARNING) << "Invalid curl read callback function params, size is '" << size
-//        << "', nitems is '" << nitems << "'!";
+//        SPDLOG_WARN("Invalid curl read callback function params, size is '{}', nitems is '{}'!", size, nitems);
 //        return nitems;
 //    }
 //
@@ -369,7 +367,7 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
     CURL * curl = curl_easy_init();
     if (nullptr == curl)
     {
-        LOG(ERROR) << "Failed to curl_easy_init!";
+        SPDLOG_ERROR("Failed to curl_easy_init!");
         return false;
     }
 //    curl_read_userdata read_userdata = { req_data, 0 };
@@ -425,8 +423,8 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
         CURLcode curl_ret = curl_easy_perform(curl);
         if (curl_ret != CURLcode::CURLE_OK)
         {
-            LOG(WARNING) << "curl_easy_perform fail, curl code is '" << curl_ret << "', error is '" << errbuf
-                         << "', url is '" << url << "'!";
+            SPDLOG_WARN("curl_easy_perform fail, curl code is '{}', error is '{}', url is '{}'!", 
+                static_cast<int>(curl_ret), errbuf, url);
             break;
         }
         ret = true;
@@ -435,12 +433,13 @@ bool http_req(const std::string & url, const std::string & req_data, long timeou
         curl_ret = curl_easy_getinfo(curl, CURLINFO::CURLINFO_RESPONSE_CODE, &code);
         if (CURLcode::CURLE_OK != curl_ret)
         {
-            LOG(WARNING) << "curl_easy_getinfo fail, curl_code is '" << curl_ret << "', error is '" << errbuf << "'!";
+            SPDLOG_WARN("curl_easy_getinfo fail, curl_code is '{}', error is '{}'!",
+                 static_cast<int>(curl_ret), errbuf);
             break;
         }
         resp_code = static_cast<int>(code);
         if (resp_code != 200)
-            LOG(WARNING) << "'" << url << "' request failed, response code is '" << resp_code << "'!";
+            SPDLOG_WARN("'{}' request failed, response code is '{}'!", url, resp_code);
     } while (false);
 
     curl_easy_cleanup(curl);
@@ -452,14 +451,14 @@ bool shell_execute(const std::string& cmd, std::string& result)
 {
     if (cmd.empty())
     {
-        LOG(WARNING) << "Invalid cmd!";
+        SPDLOG_WARN("Invalid cmd!");
         return false;
     }
     std::array<char, 128> buffer = {};
     FILE * pipe = pve_popen(cmd.c_str(), "r");
     if (nullptr == pipe)
     {
-        LOG(WARNING) << "Failed to popen '" << cmd << "'!";
+        SPDLOG_WARN("Failed to popen '{}'!", cmd);
         return false;
     }
     while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr)
@@ -467,7 +466,7 @@ bool shell_execute(const std::string& cmd, std::string& result)
     const int res = pve_pclose(pipe);
     if (res != 0)
     {
-        LOG(WARNING) << "Error pclose result '" << res << "' from execution of '" << cmd << "'!";
+        SPDLOG_WARN("Error pclose result '{}' from execution of '{}'!", res, cmd);
         return false;
     }
     return true;

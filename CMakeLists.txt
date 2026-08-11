@@ -5,14 +5,12 @@ project(${PROJECT_NAME})
 
 message("CMake version: " ${CMAKE_VERSION})
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(MIPS_TARGET "Building for mips target" OFF)
 
-add_definitions(-DFMT_HEADER_ONLY)
 add_definitions(-DCURL_STATICLIB)
-add_definitions(-DGLOG_USE_GLOG_EXPORT)
 if(WIN32)
     add_definitions(-DHAVE_SNPRINTF)
 endif()
@@ -38,32 +36,40 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         "${CMAKE_SOURCE_DIR}/3rdparty/cmdline"
-        "${CMAKE_SOURCE_DIR}/3rdparty/fmt/include"
         "${CMAKE_SOURCE_DIR}/3rdparty/rapidjson/include"
-        "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/include")
+        "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/include"
+        "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/include/spdlog-2")
 
-target_link_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib")
+target_link_directories(${PROJECT_NAME} PRIVATE 
+    "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib" 
+    "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib/spdlog-2")
 if(EXISTS ${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib64)
-    target_link_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib64")
+    target_link_directories(${PROJECT_NAME} PRIVATE 
+        "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib64" 
+        "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib64/spdlog-2")
 endif()
+
+target_compile_options(${PROJECT_NAME} PRIVATE 
+    $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+    $<$<C_COMPILER_ID:MSVC>:/utf-8>)
 
 if(WIN32)
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_link_libraries(${PROJECT_NAME} PRIVATE libcurl-d glogd yaml-cppd)
+        target_link_libraries(${PROJECT_NAME} PRIVATE libcurl-d fmtd spdlog-2.0d yaml-cppd)
     else()
-        target_link_libraries(${PROJECT_NAME} PRIVATE libcurl glog yaml-cpp)
+        target_link_libraries(${PROJECT_NAME} PRIVATE libcurl fmt spdlog-2.0 yaml-cpp)
     endif()
     target_link_libraries(${PROJECT_NAME} PRIVATE wldap32 crypt32 Ws2_32)
     set_property(TARGET ${PROJECT_NAME} PROPERTY
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 elseif(APPLE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto z pthread dl
+    target_link_libraries(${PROJECT_NAME} PRIVATE curl fmt spdlog-2.0 yaml-cpp ssl crypto z pthread dl
         ${LIB_FOUNDATION} ${LIB_SYSTEMCONFIGURATION})
 else()
     if(MIPS_TARGET)
-        target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto pthread dl)
+        target_link_libraries(${PROJECT_NAME} PRIVATE curl fmt spdlog-2.0 yaml-cpp ssl crypto pthread dl)
     else()
-        target_link_libraries(${PROJECT_NAME} PRIVATE curl glog yaml-cpp ssl crypto z pthread dl)
+        target_link_libraries(${PROJECT_NAME} PRIVATE curl fmt spdlog-2.0 yaml-cpp ssl crypto z pthread dl)
     endif()
 endif()
 

@@ -1,7 +1,7 @@
 #include "dns_service_dnspod.h"
 
 #include "fmt/format.h"
-#include "glog/logging.h"
+#include "spdlog/spdlog.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 
@@ -22,13 +22,13 @@ bool DnsServiceDnspod::setCredentials(const std::string & cred_str)
 {
     if (cred_str.empty())
     {
-        LOG(WARNING) << "Credentials string is empty!";
+        SPDLOG_WARN("Credentials string is empty!");
         return false;
     }
     std::string::size_type comma_pos = cred_str.find(',');
     if (std::string::npos == comma_pos)
     {
-        LOG(WARNING) << "Invalid credentials string '" << cred_str << "', should be in format 'TOKEN_ID,TOKEN'!";
+        SPDLOG_WARN("Invalid credentials string '{}', should be in format 'TOKEN_ID,TOKEN'!", cred_str);
         return false;
     }
     _token = cred_str;
@@ -36,11 +36,11 @@ bool DnsServiceDnspod::setCredentials(const std::string & cred_str)
     std::string api_version;
     if (!getVersion(api_version))
     {
-        LOG(WARNING) << "Failed to get API version, maybe wrong token!";
+        SPDLOG_WARN("Failed to get API version, maybe wrong token!");
         return false;
     }
 
-    LOG(INFO) << "Successfully got API version '" << api_version << "'.";
+    SPDLOG_INFO("Successfully got API version '{}'.", api_version);
     return true;
 }
 
@@ -76,8 +76,7 @@ bool DnsServiceDnspod::getVersion(std::string & version)
     const bool ret = http_req(req_url, req_body, config._http_timeout_ms, {}, resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return false;
     }
 
@@ -85,8 +84,8 @@ bool DnsServiceDnspod::getVersion(std::string & version)
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return false;
     }
 
@@ -103,7 +102,7 @@ bool DnsServiceDnspod::getVersion(std::string & version)
         }
     }
 
-    LOG(WARNING) << "Invalid response '" << resp_data << "'!";
+    SPDLOG_WARN("Invalid response '{}'!", resp_data);
     return false;
 }
 
@@ -111,7 +110,7 @@ std::string DnsServiceDnspod::getIp(const std::string & domain, bool is_v4)
 {
     if (domain.empty())
     {
-        LOG(WARNING) << "Invalid param!";
+        SPDLOG_WARN("Invalid param!");
         return "";
     }
 
@@ -129,8 +128,7 @@ std::string DnsServiceDnspod::getIp(const std::string & domain, bool is_v4)
     const bool ret = http_req(req_url, req_body, config._http_timeout_ms, {}, resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return "";
     }
 
@@ -138,8 +136,8 @@ std::string DnsServiceDnspod::getIp(const std::string & domain, bool is_v4)
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return "";
     }
 
@@ -160,8 +158,8 @@ std::string DnsServiceDnspod::getIp(const std::string & domain, bool is_v4)
                         line_id = r["line_id"].GetString();
                     if (!updateRecordCache(domain, is_v4, record_id, line_id))
                     {
-                        LOG(WARNING) << "Failed to update record cache for IP" << (is_v4 ? "v4" : "v6")
-                                     << " domain '" << domain << "'!";
+                        SPDLOG_WARN("Failed to update record cache for IP{} domain '{}'!", 
+                            (is_v4 ? "v4" : "v6"), domain);
                         return "";
                     }
                     if (r.HasMember("value") && r["value"].IsString())
@@ -171,7 +169,7 @@ std::string DnsServiceDnspod::getIp(const std::string & domain, bool is_v4)
         }
     }
 
-    LOG(WARNING) << "Invalid response '" << resp_data << "'!";
+    SPDLOG_WARN("Invalid response '{}'!", resp_data);
     return "";
 }
 
@@ -179,14 +177,14 @@ bool DnsServiceDnspod::setIp(const std::string & domain, const std::string & ip,
 {
     if (domain.empty() || ip.empty())
     {
-        LOG(WARNING) << "Invalid params, domain '" << domain << "', ip '" << ip << "'!";
+        SPDLOG_WARN("Invalid params, domain '{}', ip '{}'!", domain, ip);
         return false;
     }
 
     const auto & record_cache = getRecordCache(domain, is_v4);
     if (nullptr == record_cache)
     {
-        LOG(WARNING) << "No record cache found for IP" << (is_v4 ? "v4" : "v6") << " domain '" << domain << "'!";
+        SPDLOG_WARN("No record cache found for IP{} domain '{}'!", (is_v4 ? "v4" : "v6"), domain);
         return false;
     }
 
@@ -204,8 +202,7 @@ bool DnsServiceDnspod::setIp(const std::string & domain, const std::string & ip,
     const bool ret = http_req(req_url, req_body, config._http_timeout_ms, {}, resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-        << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return "";
     }
 
@@ -213,8 +210,8 @@ bool DnsServiceDnspod::setIp(const std::string & domain, const std::string & ip,
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-        << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return "";
     }
 
@@ -225,7 +222,7 @@ bool DnsServiceDnspod::setIp(const std::string & domain, const std::string & ip,
             return true;
     }
 
-    LOG(WARNING) << "Invalid response '" << resp_data << "'!";
+    SPDLOG_WARN("Invalid response '{}'!", resp_data);
 
     return false;
 }
@@ -235,8 +232,7 @@ bool DnsServiceDnspod::updateRecordCache(const std::string & domain, bool is_v4,
 {
     if (domain.empty() || record_id.empty() || line_id.empty())
     {
-        LOG(WARNING) << "Invalid params, domain '" << domain << "', record id '" << record_id << "', line id '"
-                     << line_id << "'";
+        SPDLOG_WARN("Invalid params, domain '{}', record id '{}', line id '{}'", domain, record_id, line_id);
         return false;
     }
 
@@ -265,7 +261,7 @@ const dnspod_record_cache * DnsServiceDnspod::getRecordCache(const std::string &
 {
     if (domain.empty())
     {
-        LOG(WARNING) << "Invalid param!";
+        SPDLOG_WARN("Invalid param!");
         return nullptr;
     }
 

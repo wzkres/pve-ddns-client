@@ -1,7 +1,7 @@
 #include "dns_service_porkbun.h"
 
 #include "fmt/format.h"
-#include "glog/logging.h"
+#include "spdlog/spdlog.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 
@@ -21,13 +21,13 @@ bool DnsServicePorkbun::setCredentials(const std::string & cred_str)
 {
     if (cred_str.empty())
     {
-        LOG(WARNING) << "Credentials string is empty!";
+        SPDLOG_WARN("Credentials string is empty!");
         return false;
     }
     std::string::size_type comma_pos = cred_str.find(',');
     if (std::string::npos == comma_pos)
     {
-        LOG(WARNING) << "Invalid credentials string '" << cred_str << "', should be in format 'API_KEY,API_SECRET'!";
+        SPDLOG_WARN("Invalid credentials string '{}', should be in format 'API_KEY,API_SECRET'!", cred_str);
         return false;
     }
     _api_key = cred_str.substr(0, comma_pos);
@@ -60,7 +60,7 @@ std::string DnsServicePorkbun::getIp(const std::string & domain, bool is_v4)
 {
     if (domain.empty())
     {
-        LOG(WARNING) << "Invalid param!";
+        SPDLOG_WARN("Invalid param!");
         return "";
     }
 
@@ -74,8 +74,7 @@ std::string DnsServicePorkbun::getIp(const std::string & domain, bool is_v4)
     const bool ret = http_req(req_url, req_body, Config::getInstance()._http_timeout_ms, {}, resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return "";
     }
 
@@ -83,8 +82,8 @@ std::string DnsServicePorkbun::getIp(const std::string & domain, bool is_v4)
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return "";
     }
 
@@ -106,7 +105,7 @@ bool DnsServicePorkbun::setIp(const std::string & domain, const std::string & ip
 {
     if (domain.empty() || ip.empty())
     {
-        LOG(WARNING) << "Invalid params, domain '" << domain << "', ip '" << ip << "'!";
+        SPDLOG_WARN("Invalid params, domain '{}', ip '{}'!", domain, ip);
         return false;
     }
 
@@ -121,8 +120,7 @@ bool DnsServicePorkbun::setIp(const std::string & domain, const std::string & ip
     const bool ret = http_req(req_url, req_body, Config::getInstance()._http_timeout_ms, {}, resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return false;
     }
 
@@ -130,8 +128,8 @@ bool DnsServicePorkbun::setIp(const std::string & domain, const std::string & ip
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return false;
     }
 

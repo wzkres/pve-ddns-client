@@ -1,7 +1,8 @@
 #include "pve_pct_wrapper.h"
 
+#include <sstream>
 #include "fmt/format.h"
-#include "glog/logging.h"
+#include "spdlog/spdlog.h"
 
 #include "../utils.h"
 
@@ -13,7 +14,7 @@ bool PvePctWrapper::init()
     std::string result;
     if (!shell_execute(pct_list, result))
     {
-        LOG(WARNING) << "Failed to get LCX vmid list, result is '" << result << "'!";
+        SPDLOG_WARN("Failed to get LCX vmid list, result is '{}'!", result);
         _available = false;
         return false;
     }
@@ -38,14 +39,13 @@ std::pair<std::string, std::string> PvePctWrapper::getGuestIp(const int vmid, co
     std::string result;
     if (!shell_execute(pct_ip_addr, result))
     {
-        LOG(WARNING) << "Failed to get ip of LXC guest vmid '" << vmid << "', result is '" << result << "'!";
+        SPDLOG_WARN("Failed to get ip of LXC guest vmid '{}', result is '{}'!", vmid, result);
         return { "", "" };
     }
     std::string v4_ip, v6_ip;
     if (!get_ip_from_ip_addr_result(result, iface, v4_ip, v6_ip))
     {
-        LOG(WARNING) << "Failed to get_ip_from_ip_addr_result '" << result
-            << "' with specified iface: " << iface << "!";
+        SPDLOG_WARN("Failed to get_ip_from_ip_addr_result '{}' with specified iface: {}!", result, iface);
         return { "", "" };
     }
     return { v4_ip, v6_ip };
@@ -64,8 +64,8 @@ void PvePctWrapper::parseListResult(const std::string & result)
         const int vmid = static_cast<int>(strtol(line.c_str(), &endptr, 10));
         if (nptr == endptr)
             continue;
-        LOG(INFO) << "Got LXC VMID '" << vmid << "' from result line '" << line << "'.";
+        SPDLOG_INFO("Got LXC VMID '{}' from result line '{}'.", vmid, line);
         _lxc_vmids.emplace_back(vmid);
     }
-    LOG(INFO) << "Total " << _lxc_vmids.size() << " LXC VM id(s) parsed from pct list result.";
+    SPDLOG_INFO("Total {} LXC VM id(s) parsed from pct list result.", _lxc_vmids.size());
 }

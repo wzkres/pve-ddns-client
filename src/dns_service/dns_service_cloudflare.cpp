@@ -1,7 +1,7 @@
 #include "dns_service_cloudflare.h"
 
 #include "fmt/format.h"
-#include "glog/logging.h"
+#include "spdlog/spdlog.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 
@@ -23,13 +23,13 @@ bool DnsServiceCloudflare::setCredentials(const std::string & cred_str)
 {
     if (cred_str.empty())
     {
-        LOG(WARNING) << "Credentials string is empty!";
+        SPDLOG_WARN("Credentials string is empty!");
         return false;
     }
     _token = cred_str;
     if (!verifyToken())
     {
-        LOG(WARNING) << "Invalid cloudflare API token '" << cred_str << "'!";
+        SPDLOG_WARN("Invalid cloudflare API token '{}'!", cred_str);
         return false;
     }
 
@@ -60,7 +60,7 @@ bool DnsServiceCloudflare::verifyToken()
 {
     if (_token.empty())
     {
-        LOG(WARNING) << "Empty token string!";
+        SPDLOG_WARN("Empty token string!");
         return false;
     }
 
@@ -75,8 +75,7 @@ bool DnsServiceCloudflare::verifyToken()
                               resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-        << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return false;
     }
 
@@ -84,8 +83,8 @@ bool DnsServiceCloudflare::verifyToken()
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return false;
     }
     if (d.HasMember("success") && d["success"].IsBool())
@@ -95,7 +94,7 @@ bool DnsServiceCloudflare::verifyToken()
             return true;
     }
 
-    LOG(WARNING) << "Invalid response '" << resp_data << "'!";
+    SPDLOG_WARN("Invalid response '{}'!", resp_data);
     return false;
 }
 
@@ -112,8 +111,7 @@ bool DnsServiceCloudflare::getZoneId(const std::string & domain_name, std::strin
                               resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-        << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return false;
     }
 
@@ -121,8 +119,8 @@ bool DnsServiceCloudflare::getZoneId(const std::string & domain_name, std::strin
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-        << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return false;
     }
     if (d.HasMember("success") && d["success"].IsBool())
@@ -142,7 +140,7 @@ bool DnsServiceCloudflare::getZoneId(const std::string & domain_name, std::strin
         }
     }
 
-    LOG(WARNING) << "Invalid response '" << resp_data << "'!";
+    SPDLOG_WARN("Invalid response '{}'!", resp_data);
     return false;
 }
 
@@ -162,8 +160,7 @@ bool DnsServiceCloudflare::getRecordId(const std::string & domain_name, const st
                               resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-        << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return false;
     }
 
@@ -171,8 +168,8 @@ bool DnsServiceCloudflare::getRecordId(const std::string & domain_name, const st
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-        << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return false;
     }
     if (d.HasMember("success") && d["success"].IsBool())
@@ -196,7 +193,7 @@ bool DnsServiceCloudflare::getRecordId(const std::string & domain_name, const st
         }
     }
 
-    LOG(WARNING) << "Invalid response '" << resp_data << "'!";
+    SPDLOG_WARN("Invalid response '{}'!", resp_data);
     return false;
 }
 
@@ -213,7 +210,7 @@ std::string DnsServiceCloudflare::getIp(const std::string & domain, bool is_v4)
     {
         if (!getZoneId(sub_domain.first, zone_id))
         {
-            LOG(WARNING) << "Failed to retrieve zone id of '" << sub_domain.first << "'!";
+            SPDLOG_WARN("Failed to retrieve zone id of '{}'!", sub_domain.first);
             return "";
         }
         _zones[sub_domain.first] = zone_id;
@@ -223,7 +220,7 @@ std::string DnsServiceCloudflare::getIp(const std::string & domain, bool is_v4)
 
     if (!getRecordId(domain, zone_id, rec_type, record_id, record_content))
     {
-        LOG(WARNING) << "Failed to retrieve DNS record id and/or content of '" << rec_id_key << "'!";
+        SPDLOG_WARN("Failed to retrieve DNS record id and/or content of '{}'!", rec_id_key);
         return "";
     }
     _records[rec_id_key] = record_id;
@@ -242,7 +239,7 @@ bool DnsServiceCloudflare::setIp(const std::string & domain, const std::string &
     std::string zone_id, record_id, record_content;
     if (_zones.find(sub_domain.first) == _zones.end())
     {
-        LOG(WARNING) << "Missing zone ID of '" << sub_domain.first << "'!";
+        SPDLOG_WARN("Missing zone ID of '{}'!", sub_domain.first);
         return false;
     }
     else
@@ -250,7 +247,7 @@ bool DnsServiceCloudflare::setIp(const std::string & domain, const std::string &
 
     if (_records.find(rec_id_key) == _records.end())
     {
-        LOG(WARNING) << "Missing DNS record ID of '" << rec_id_key << "'!";
+        SPDLOG_WARN("Missing DNS record ID of '{}'!", rec_id_key);
         return false;
     }
 
@@ -268,8 +265,7 @@ bool DnsServiceCloudflare::setIp(const std::string & domain, const std::string &
                               resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return false;
     }
 
@@ -277,8 +273,8 @@ bool DnsServiceCloudflare::setIp(const std::string & domain, const std::string &
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return false;
     }
     if (d.HasMember("success") && d["success"].IsBool())
@@ -288,6 +284,6 @@ bool DnsServiceCloudflare::setIp(const std::string & domain, const std::string &
             return true;
     }
 
-    LOG(WARNING) << "Invalid response '" << resp_data << "'!";
+    SPDLOG_WARN("Invalid response '{}'!", resp_data);
     return false;
 }

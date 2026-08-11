@@ -27,18 +27,31 @@ cd ..
 rm -rf cmake_build
 echo "curl built!"
 
-echo "Building glog..."
-cd ${script_path}/glog
+echo "Building fmt..."
+cd ${script_path}/fmt
 rm -rf cmake_build
 mkdir cmake_build
 cd cmake_build
-cmake -DCMAKE_CXX_STANDARD=14 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DWITH_GFLAGS=NO -DWITH_UNWIND=NO -DBUILD_SHARED_LIBS=NO -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=${script_path}/prebuilt ../
+cmake -DBUILD_SHARED_LIBS=NO -DFMT_DOC=NO -DFMT_TEST=NO -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=${script_path}/prebuilt ../
 make -j4
 make install
 make clean
 cd ..
 rm -rf cmake_build
-echo "glog built!"
+echo "fmt built!"
+
+echo "Building spdlog..."
+cd ${script_path}/spdlog
+rm -rf cmake_build
+mkdir cmake_build
+cd cmake_build
+cmake -DBUILD_SHARED_LIBS=NO -DSPDLOG_FMT_EXTERNAL=YES -DCMAKE_INSTALL_PREFIX:PATH=${script_path}/prebuilt ../
+make -j4
+make install
+make clean
+cd ..
+rm -rf cmake_build
+echo "spdlog built!"
 
 echo "Building yaml-cpp..."
 cd ${script_path}/yaml-cpp

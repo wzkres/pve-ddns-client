@@ -1,6 +1,6 @@
 #include "pve_api_client.h"
 
-#include "glog/logging.h"
+#include "spdlog/spdlog.h"
 #include "fmt/format.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
@@ -26,7 +26,7 @@ bool PveApiClient::init()
 {
     const bool ret = checkApiHost();
     if (!ret)
-        LOG(WARNING) << "Failed to checkApiHost!";
+        SPDLOG_WARN("Failed to checkApiHost!");
     return ret;
 }
 
@@ -42,8 +42,7 @@ std::pair<std::string, std::string> PveApiClient::getHostIp(const std::string & 
     const bool ret = req(req_url, "", resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return { "", "" };
     }
 
@@ -51,8 +50,8 @@ std::pair<std::string, std::string> PveApiClient::getHostIp(const std::string & 
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return { "", "" };
     }
 
@@ -85,8 +84,7 @@ std::pair<std::string, std::string> PveApiClient::getGuestIp(const std::string &
     const bool ret = req(req_url, "", resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return { "", "" };
     }
 
@@ -94,8 +92,8 @@ std::pair<std::string, std::string> PveApiClient::getGuestIp(const std::string &
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return { "", "" };
     }
 
@@ -157,8 +155,7 @@ bool PveApiClient::setHostNetworkAddress(const std::string & node, const std::st
                               resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return false;
     }
 
@@ -166,8 +163,8 @@ bool PveApiClient::setHostNetworkAddress(const std::string & node, const std::st
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return false;
     }
 
@@ -205,8 +202,7 @@ bool PveApiClient::reqHostNetwork(const std::string & method, const std::string 
                               resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return false;
     }
 
@@ -214,8 +210,8 @@ bool PveApiClient::reqHostNetwork(const std::string & method, const std::string 
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return false;
     }
 
@@ -232,8 +228,7 @@ bool PveApiClient::checkApiHost() const
     const bool ret = req(req_url, "", resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return ret;
     }
 
@@ -241,8 +236,8 @@ bool PveApiClient::checkApiHost() const
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return false;
     }
 
@@ -251,7 +246,7 @@ bool PveApiClient::checkApiHost() const
         const auto & data = d["data"];
         if (data.HasMember("version") && data["version"].IsString())
         {
-            LOG(INFO) << "Successfully got API version: " << data["version"].GetString();
+            SPDLOG_INFO("Successfully got API version: {}", data["version"].GetString());
             return true;
         }
     }

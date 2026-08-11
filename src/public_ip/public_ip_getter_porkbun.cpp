@@ -1,6 +1,6 @@
 #include "public_ip_getter_porkbun.h"
 
-#include "glog/logging.h"
+#include "spdlog/spdlog.h"
 #include "fmt/format.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
@@ -21,13 +21,13 @@ bool PublicIpGetterPorkbun::setCredentials(const std::string & cred_str)
 {
     if (cred_str.empty())
     {
-        LOG(WARNING) << "Credentials string is empty!";
+        SPDLOG_WARN("Credentials string is empty!");
         return false;
     }
     std::string::size_type comma_pos = cred_str.find(',');
     if (std::string::npos == comma_pos)
     {
-        LOG(WARNING) << "Invalid credentials string '" << cred_str << "', should be in format 'API_KEY,API_SECRET'!";
+        SPDLOG_WARN("Invalid credentials string '{}', should be in format 'API_KEY,API_SECRET'!", cred_str);
         return false;
     }
     _api_key = cred_str.substr(0, comma_pos);
@@ -46,7 +46,7 @@ std::string PublicIpGetterPorkbun::getIpv6()
     std::string v6_ip = getIp(API_HOST);
     if (!is_ipv6(v6_ip))
     {
-        LOG(WARNING) << "'" << v6_ip << "' is not valid IPv6 ip!";
+        SPDLOG_WARN("'{}' is not valid IPv6 ip!", v6_ip);
         return "";
     }
     return v6_ip;
@@ -61,16 +61,15 @@ std::string PublicIpGetterPorkbun::getIp(const std::string & api_host) const
     const bool ret = http_req(req_url, req_body, Config::getInstance()._http_timeout_ms, {}, resp_code, resp_data);
     if (!ret || 200 != resp_code)
     {
-        LOG(WARNING) << "Failed to request '" << req_url << "', response code is " << resp_code << ", response is "
-                     << resp_data << "!";
+        SPDLOG_WARN("Failed to request '{}', response code is {}, response is {}!", req_url, resp_code, resp_data);
         return "";
     }
     rapidjson::Document d;
     rapidjson::ParseResult ok = d.Parse(resp_data.c_str());
     if (!ok)
     {
-        LOG(WARNING) << "Failed to parse response json, error '" << rapidjson::GetParseError_En(ok.Code())
-                     << "' (" << ok.Offset() << ")";
+        SPDLOG_WARN("Failed to parse response json, error '{}' ({})", 
+            rapidjson::GetParseError_En(ok.Code()), ok.Offset());
         return "";
     }
 
@@ -81,7 +80,7 @@ std::string PublicIpGetterPorkbun::getIp(const std::string & api_host) const
         {
             if (d.HasMember("yourIp") && d["yourIp"].IsString())
             {
-                LOG(INFO) << "Successfully got my ip: " << d["yourIp"].GetString() << " from '" << api_host << "'.";
+                SPDLOG_TRACE("Successfully got my ip: {} from '{}'.", d["yourIp"].GetString(), api_host);
                 return d["yourIp"].GetString();
             }
         }

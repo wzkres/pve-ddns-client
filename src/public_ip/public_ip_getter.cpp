@@ -1,6 +1,6 @@
 #include "public_ip_getter.h"
 
-#include "glog/logging.h"
+#include "spdlog/spdlog.h"
 
 #include "../utils.h"
 #include "public_ip_getter_iface.h"
@@ -11,7 +11,7 @@ IPublicIpGetter * PublicIpGetterFactory::create(const std::string & service_name
 {
     if (service_name.empty())
     {
-        LOG(WARNING) << "Invalid service_name!";
+        SPDLOG_WARN("Invalid service_name!");
         return nullptr;
     }
 
@@ -20,7 +20,7 @@ IPublicIpGetter * PublicIpGetterFactory::create(const std::string & service_name
         auto * getter = new(std::nothrow) PublicIpGetterIface();
         if (nullptr == getter)
         {
-            LOG(ERROR) << "Failed to instantiate PublicIpGetterIface!";
+            SPDLOG_ERROR("Failed to instantiate PublicIpGetterIface!");
             return nullptr;
         }
         return getter;
@@ -31,7 +31,7 @@ IPublicIpGetter * PublicIpGetterFactory::create(const std::string & service_name
         auto * getter = new(std::nothrow) PublicIpGetterPorkbun();
         if (nullptr == getter)
         {
-            LOG(ERROR) << "Failed to instantiate PublicIpGetterPorkbun!";
+            SPDLOG_ERROR("Failed to instantiate PublicIpGetterPorkbun!");
             return nullptr;
         }
         return getter;
@@ -42,13 +42,13 @@ IPublicIpGetter * PublicIpGetterFactory::create(const std::string & service_name
         auto * getter = new(std::nothrow) PublicIpGetterIpify();
         if (nullptr == getter)
         {
-            LOG(ERROR) << "Failed to instantiate PublicIpGetterIpify!";
+            SPDLOG_ERROR("Failed to instantiate PublicIpGetterIpify!");
             return nullptr;
         }
         return getter;
     }
 
-    LOG(WARNING) << "Unsupported public ip getter '" << service_name << "'!";
+    SPDLOG_WARN("Unsupported public ip getter '{}'!", service_name);
 
     return nullptr;
 }
@@ -57,7 +57,7 @@ void PublicIpGetterFactory::destroy(IPublicIpGetter * ip_getter)
 {
     if (nullptr == ip_getter)
     {
-        LOG(WARNING) << "Invalid param!";
+        SPDLOG_WARN("Invalid param!");
         return;
     }
 
@@ -66,23 +66,23 @@ void PublicIpGetterFactory::destroy(IPublicIpGetter * ip_getter)
     {
         auto * g = dynamic_cast<PublicIpGetterIface *>(ip_getter);
         if (nullptr == g)
-            LOG(WARNING) << "ip_getter is not instance of PublicIpGetterIface!";
+            SPDLOG_WARN("ip_getter is not instance of PublicIpGetterIface!");
         delete g;
     }
     else if (str_iequals(name, PUBLIC_IP_GETTER_PORKBUN))
     {
         auto * g = dynamic_cast<PublicIpGetterPorkbun *>(ip_getter);
         if (nullptr == g)
-            LOG(WARNING) << "ip_getter is not instance of PublicIpGetterPorkbun!";
+            SPDLOG_WARN("ip_getter is not instance of PublicIpGetterPorkbun!");
         delete g;
     }
     else if (str_iequals(name, PUBLIC_IP_GETTER_IPIFY))
     {
         auto * g = dynamic_cast<PublicIpGetterIpify *>(ip_getter);
         if (nullptr == g)
-            LOG(WARNING) << "ip_getter is not instance of PublicIpGetterIpify!";
+            SPDLOG_WARN("ip_getter is not instance of PublicIpGetterIpify!");
         delete g;
     }
     else
-        LOG(WARNING) << "Unsupported public ip getter '" << name << "'!";
+        SPDLOG_WARN("Unsupported public ip getter '{}'!", name);
 }
