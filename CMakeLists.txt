@@ -57,7 +57,7 @@ if(WIN32)
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_link_libraries(${PROJECT_NAME} PRIVATE libcurl-d fmtd spdlog-2.0d yaml-cppd)
     else()
-        target_link_libraries(${PROJECT_NAME} PRIVATE libcurl fmt spdlog-2.0 yaml-cpp)
+        target_link_libraries(${PROJECT_NAME} PRIVATE libcurl fmt spdlog yaml-cpp)
     endif()
     target_link_libraries(${PROJECT_NAME} PRIVATE wldap32 crypt32 Ws2_32)
     set_property(TARGET ${PROJECT_NAME} PROPERTY
