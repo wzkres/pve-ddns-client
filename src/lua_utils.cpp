@@ -151,14 +151,14 @@ lua_State * lua_init_module(const std::string & module_path)
     {
         lua_close(ls);
         SPDLOG_WARN("Failed to lua_open_log_api for module {}!", module_path);
-        return false;
+        return nullptr;
     }
 
     if (!lua_open_http_api(ls))
     {
         lua_close(ls);
         SPDLOG_WARN("Failed to lua_open_http_api for module {}!", module_path);
-        return false;
+        return nullptr;
     }
 
     // Manually open lua-rapidjson as it is compiled with main executable
