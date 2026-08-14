@@ -30,15 +30,23 @@ if(APPLE)
     endif()
 endif()
 
+set(LUA_SOURCES "3rdparty/lua/onelua.c")
+file(GLOB_RECURSE LUA_RAPIDJSON_SOURCES "3rdparty/lua-rapidjson/src/*.cpp")
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.cc")
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${LUA_SOURCES} ${LUA_RAPIDJSON_SOURCES} ${SOURCES})
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE "MAKE_LIB")
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         "${CMAKE_SOURCE_DIR}/3rdparty/cmdline"
         "${CMAKE_SOURCE_DIR}/3rdparty/rapidjson/include"
+        "${CMAKE_SOURCE_DIR}/3rdparty/lua"
+        "${CMAKE_SOURCE_DIR}/3rdparty/lua-rapidjson/src"
         "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/include"
-        "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/include/spdlog-2")
+        "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/include/spdlog-2"
+        # For lua.hpp used by lua-rapidjson
+        "${CMAKE_SOURCE_DIR}/src")
 
 target_link_directories(${PROJECT_NAME} PRIVATE 
     "${CMAKE_SOURCE_DIR}/3rdparty/prebuilt/lib" 

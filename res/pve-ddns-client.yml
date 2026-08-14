@@ -5,6 +5,9 @@ general:
   log-level: info
   spdlog-pattern: "[%Y-%m-%d %H:%M:%S.%e][P%P-T%t][%L][%s:%#] %v"
   service-mode: true
+  module-path:
+    ip: "./ip_services"
+    dns: "./dns_services"
   public-ip:
     service: porkbun
     credentials: api_key,secret_key

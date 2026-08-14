@@ -70,6 +70,10 @@ public:
     // Long-running service mode
     bool _service_mode = true;
 
+    // Module paths
+    std::string _module_path_ip = "./ip_services";
+    std::string _module_path_dns = "./dns_services";
+
     // Public IP service related
     std::string _public_ip_service;
     std::string _public_ip_credentials;

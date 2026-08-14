@@ -19,3 +19,9 @@
 [submodule "3rdparty/spdlog"]
 	path = 3rdparty/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "3rdparty/lua"]
+	path = 3rdparty/lua
+	url = https://github.com/lua/lua.git
+[submodule "3rdparty/lua-rapidjson"]
+	path = 3rdparty/lua-rapidjson
+	url = https://github.com/xpol/lua-rapidjson.git

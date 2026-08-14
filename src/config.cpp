@@ -43,6 +43,14 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
         const auto val = yaml_node["service-mode"].as<std::string>();
         config._service_mode = val == "true";
     }
+    if (yaml_node["module-path"])
+    {
+        const auto & mp = yaml_node["module-path"];
+        if (mp["ip"])
+            config._module_path_ip = mp["ip"].as<std::string>();
+        if (mp["dns"])
+            config._module_path_dns = mp["dns"].as<std::string>();
+    }
     if (yaml_node["public-ip"])
     {
         const auto & pi = yaml_node["public-ip"];

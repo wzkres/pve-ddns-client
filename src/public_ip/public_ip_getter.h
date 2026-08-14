@@ -7,6 +7,7 @@
 constexpr const char * PUBLIC_IP_GETTER_IFACE = "iface";
 constexpr const char * PUBLIC_IP_GETTER_PORKBUN = "porkbun";
 constexpr const char * PUBLIC_IP_GETTER_IPIFY = "ipify";
+constexpr const char * PUBLIC_IP_GETTER_LUA = "lua";
 
 /// Public IP getter interface
 class IPublicIpGetter
