@@ -25,22 +25,13 @@ bool PublicIpGetterLua::loadModule(const std::string & module_name)
     file_name.append(".lua");
     mdl_path /= file_name;
 
-    _ls = lua_init_module(mdl_path.string());
+    _ls = lua_load_module("LUA public IP getter", mdl_path.string());
     if (nullptr == _ls)
     {
-        SPDLOG_WARN("Failed to lua_init_module {}", mdl_path.string());
+        SPDLOG_WARN("Failed to lua_load_module {}!", mdl_path.string());
         return false;
     }
 
-    auto mi = lua_module_info(_ls);
-    if (mi.first.empty() || mi.second.empty())
-    {
-        SPDLOG_WARN("Invalid module info from LUA public IP getter module {}!", module_name);
-        return false;
-    }
-
-    SPDLOG_INFO("LUA public IP getter module '{}' loaded, author: {}, description: {}.", 
-        module_name, mi.first, mi.second);
     return true;
 }
 
@@ -51,42 +42,7 @@ const std::string & PublicIpGetterLua::getServiceName()
 
 bool PublicIpGetterLua::setCredentials(const std::string & cred_str)
 {
-    if (nullptr == _ls)
-    {
-        SPDLOG_WARN("Invalid _ls!");
-        return false;
-    }
-    if (cred_str.empty())
-    {
-        SPDLOG_WARN("Credentials string is empty!");
-        return false;
-    }
-
-    constexpr const char * func_name = "set_credentials";
-    if (lua_getglobal(_ls, func_name) != LUA_TFUNCTION)
-    {
-        SPDLOG_WARN("Missing function '{}' in LUA module!", func_name);
-        return false;
-    }
-
-    lua_pushstring(_ls, cred_str.c_str());
-    if (lua_pcall(_ls, 1, 1, 0) != LUA_OK)
-    {
-        SPDLOG_WARN("Error calling function '{}': {}!", func_name, lua_tostring(_ls, -1));
-        return false;
-    }
-
-    if (!lua_isboolean(_ls, -1))
-    {
-        SPDLOG_WARN("'{}' did not return a boolean!", func_name);
-        lua_pop(_ls, 1);
-        return false;
-    }
-    
-    bool ret = lua_toboolean(_ls, -1);
-    lua_pop(_ls, 1);
-
-    return ret;
+    return lua_moudule_set_credentials(_ls, cred_str);
 }
 
 std::string PublicIpGetterLua::getIpv4()

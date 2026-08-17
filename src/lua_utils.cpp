@@ -182,6 +182,68 @@ void lua_uninit_module(lua_State * ls)
         lua_close(ls);
 }
 
+lua_State * lua_load_module(const std::string & type, const std::string & module_path)
+{
+    auto * ls = lua_init_module(module_path);
+    if (nullptr == ls)
+    {
+        SPDLOG_WARN("Failed to lua_init_module {}", module_path);
+        return nullptr;
+    }
+
+    auto mi = lua_module_info(ls);
+    if (mi.first.empty() || mi.second.empty())
+    {
+        SPDLOG_WARN("Invalid module info from {} module {}!", type, module_path);
+        lua_close(ls);
+        return nullptr;
+    }
+
+    SPDLOG_INFO("{} module '{}' loaded, author: {}, description: {}.",
+                type, module_path, mi.first, mi.second);
+    return ls;
+}
+
+bool lua_moudule_set_credentials(lua_State * ls, const std::string & cred_str)
+{
+    if (nullptr == ls)
+    {
+        SPDLOG_WARN("Invalid ls!");
+        return false;
+    }
+    if (cred_str.empty())
+    {
+        SPDLOG_WARN("Credentials string is empty!");
+        return false;
+    }
+
+    constexpr const char * func_name = "set_credentials";
+    if (lua_getglobal(ls, func_name) != LUA_TFUNCTION)
+    {
+        SPDLOG_WARN("Missing function '{}' in LUA module!", func_name);
+        return false;
+    }
+
+    lua_pushstring(ls, cred_str.c_str());
+    if (lua_pcall(ls, 1, 1, 0) != LUA_OK)
+    {
+        SPDLOG_WARN("Error calling function '{}': {}!", func_name, lua_tostring(ls, -1));
+        return false;
+    }
+
+    if (!lua_isboolean(ls, -1))
+    {
+        SPDLOG_WARN("'{}' did not return a boolean!", func_name);
+        lua_pop(ls, 1);
+        return false;
+    }
+    
+    bool ret = lua_toboolean(ls, -1);
+    lua_pop(ls, 1);
+
+    return true;
+}
+
 std::pair<std::string, std::string> lua_module_info(lua_State * ls)
 {
     if (nullptr == ls)
