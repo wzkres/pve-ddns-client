@@ -4,14 +4,9 @@
 #define YAML_CPP_STATIC_DEFINE
 #include "yaml-cpp/yaml.h"
 
-// Parse general config from yaml node
-static void parse_general_config(const YAML::Node & yaml_node, Config & config)
+// Parse logger config from yaml node
+static void parse_logger_config(const YAML::Node & yaml_node, Config & config)
 {
-    if (yaml_node["update-interval-ms"])
-    {
-        const auto interval_ms = yaml_node["update-interval-ms"].as<uint64_t>();
-        config._update_interval = std::chrono::milliseconds(interval_ms);
-    }
     if (yaml_node["max-log-files"])
         config._max_log_files = yaml_node["max-log-files"].as<int>();
     if (yaml_node["max-log-size-mb"])
@@ -38,27 +33,11 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
     }
     if (yaml_node["spdlog-pattern"])
         config._spdlog_pattern = yaml_node["spdlog-pattern"].as<std::string>();
-    if (yaml_node["service-mode"])
-    {
-        const auto val = yaml_node["service-mode"].as<std::string>();
-        config._service_mode = val == "true";
-    }
-    if (yaml_node["module-path"])
-    {
-        const auto & mp = yaml_node["module-path"];
-        if (mp["ip"])
-            config._module_path_ip = mp["ip"].as<std::string>();
-        if (mp["dns"])
-            config._module_path_dns = mp["dns"].as<std::string>();
-    }
-    if (yaml_node["public-ip"])
-    {
-        const auto & pi = yaml_node["public-ip"];
-        if (pi["service"])
-            config._public_ip_service = pi["service"].as<std::string>();
-        if (pi["credentials"])
-            config._public_ip_credentials = pi["credentials"].as<std::string>();
-    }
+}
+
+// Parse PVE config from yaml node
+static void parse_pve_config(const YAML::Node & yaml_node, Config & config)
+{
     if (yaml_node["pve-api"])
     {
         const auto & pa = yaml_node["pve-api"];
@@ -83,6 +62,42 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
         const auto val = yaml_node["sync_host_static_v6_address"].as<std::string>();
         config._sync_host_static_v6_address = val == "true";
     }
+}
+
+// Parse general config from yaml node
+static void parse_general_config(const YAML::Node & yaml_node, Config & config)
+{
+    if (yaml_node["update-interval-ms"])
+    {
+        const auto interval_ms = yaml_node["update-interval-ms"].as<uint64_t>();
+        config._update_interval = std::chrono::milliseconds(interval_ms);
+    }
+
+    parse_logger_config(yaml_node, config);
+
+    if (yaml_node["service-mode"])
+    {
+        const auto val = yaml_node["service-mode"].as<std::string>();
+        config._service_mode = val == "true";
+    }
+    if (yaml_node["module-path"])
+    {
+        const auto & mp = yaml_node["module-path"];
+        if (mp["ip"])
+            config._module_path_ip = mp["ip"].as<std::string>();
+        if (mp["dns"])
+            config._module_path_dns = mp["dns"].as<std::string>();
+    }
+    if (yaml_node["public-ip"])
+    {
+        const auto & pi = yaml_node["public-ip"];
+        if (pi["service"])
+            config._public_ip_service = pi["service"].as<std::string>();
+        if (pi["credentials"])
+            config._public_ip_credentials = pi["credentials"].as<std::string>();
+    }
+
+    parse_pve_config(yaml_node, config);
 }
 
 // Parse ddns config from yaml node

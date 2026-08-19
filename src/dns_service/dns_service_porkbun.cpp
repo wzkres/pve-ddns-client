@@ -93,8 +93,10 @@ std::string DnsServicePorkbun::getIp(const std::string & domain, bool is_v4)
         if ("SUCCESS" == status_str)
         {
             auto it = d["records"].Begin();
-            while (it != d["records"].End())
+            if (it != d["records"].End())
                 return (*it)["content"].GetString();
+            else
+                SPDLOG_WARN("records in response json is empty!");
         }
     }
 
