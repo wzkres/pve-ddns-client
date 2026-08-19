@@ -7,8 +7,8 @@
 #include "../utils.h"
 #include "../config.h"
 
-static const char * API_HOST = "https://api6.ipify.org/?format=json";
-static const char * API_HOST_V4 = "https://api.ipify.org/?format=json";
+static constexpr const char * API_HOST = "https://api6.ipify.org/?format=json";
+static constexpr const char * API_HOST_V4 = "https://api.ipify.org/?format=json";
 
 const std::string & PublicIpGetterIpify::getServiceName()
 {

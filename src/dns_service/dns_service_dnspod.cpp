@@ -8,10 +8,10 @@
 #include "../utils.h"
 #include "../config.h"
 
-static const char * API_HOST = "https://dnsapi.cn/";
-static const char * API_VERSION = "Info.Version";
-static const char * API_RECORD_LIST = "Record.List";
-static const char * API_RECORD_DDNS = "Record.Ddns";
+static constexpr const char * API_HOST = "https://dnsapi.cn/";
+static constexpr const char * API_VERSION = "Info.Version";
+static constexpr const char * API_RECORD_LIST = "Record.List";
+static constexpr const char * API_RECORD_DDNS = "Record.Ddns";
 
 const std::string & DnsServiceDnspod::getServiceName()
 {

@@ -8,11 +8,11 @@
 #include "../utils.h"
 #include "../config.h"
 
-static const char * API_HOST = "https://api.cloudflare.com/client/v4/";
-static const char * API_VERIFY_TOKEN = "user/tokens/verify";
-static const char * API_LIST_ZONES = "zones";
-static const char * API_LIST_RECORDS = "zones/{}/dns_records";
-static const char * API_PATCH_RECORD = "zones/{}/dns_records/{}";
+static constexpr const char * API_HOST = "https://api.cloudflare.com/client/v4/";
+static constexpr const char * API_VERIFY_TOKEN = "user/tokens/verify";
+static constexpr const char * API_LIST_ZONES = "zones";
+static constexpr const char * API_LIST_RECORDS = "zones/{}/dns_records";
+static constexpr const char * API_PATCH_RECORD = "zones/{}/dns_records/{}";
 
 const std::string & DnsServiceCloudflare::getServiceName()
 {

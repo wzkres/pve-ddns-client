@@ -8,9 +8,9 @@
 #include "../utils.h"
 #include "../config.h"
 
-static const char * API_HOST = "https://api.porkbun.com/api/json/v3/";
-static const char * API_RETRIEVE = "dns/retrieveByNameType/{}/{}/{}";
-static const char * API_EDIT = "dns/editByNameType/{}/{}/{}";
+static constexpr const char * API_HOST = "https://api.porkbun.com/api/json/v3/";
+static constexpr const char * API_RETRIEVE = "dns/retrieveByNameType/{}/{}/{}";
+static constexpr const char * API_EDIT = "dns/editByNameType/{}/{}/{}";
 
 const std::string & DnsServicePorkbun::getServiceName()
 {

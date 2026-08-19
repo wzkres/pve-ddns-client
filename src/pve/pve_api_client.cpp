@@ -8,10 +8,10 @@
 #include "../config.h"
 #include "../utils.h"
 
-static const char * API_VERSION = "api2/json/version";
-static const char * API_HOST_NETWORK = "api2/json/nodes/{}/network/{}";
-static const char * API_HOST_NETWORK_APPLY = "api2/json/nodes/{}/network";
-static const char * API_GUEST_NETWORK = "api2/json//nodes/{}/qemu/{}/agent/network-get-interfaces";
+static constexpr const char * API_VERSION = "api2/json/version";
+static constexpr const char * API_HOST_NETWORK = "api2/json/nodes/{}/network/{}";
+static constexpr const char * API_HOST_NETWORK_APPLY = "api2/json/nodes/{}/network";
+static constexpr const char * API_GUEST_NETWORK = "api2/json//nodes/{}/qemu/{}/agent/network-get-interfaces";
 
 static std::string get_pve_api_http_auth_header()
 {

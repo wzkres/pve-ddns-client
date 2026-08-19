@@ -6,7 +6,7 @@
 
 #include "../utils.h"
 
-static const char * pct_cmd = "pct";
+static constexpr const char * pct_cmd = "pct";
 
 bool PvePctWrapper::init()
 {
