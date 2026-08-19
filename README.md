@@ -2,6 +2,7 @@
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause) 
 [![CMake](https://github.com/wzkres/pve-ddns-client/actions/workflows/cmake.yml/badge.svg)](https://github.com/wzkres/pve-ddns-client/actions/workflows/cmake.yml)
 [![CodeQL](https://github.com/wzkres/pve-ddns-client/actions/workflows/codeql.yml/badge.svg)](https://github.com/wzkres/pve-ddns-client/actions/workflows/codeql.yml)
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=wzkres_pve-ddns-client&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=wzkres_pve-ddns-client)
 
 # English Documentation
 
