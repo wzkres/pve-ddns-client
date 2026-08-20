@@ -12,6 +12,22 @@
 #include "../config.h"
 #include "../lua_utils.h"
 
+PublicIpGetterLua::PublicIpGetterLua(PublicIpGetterLua &&other) noexcept
+{
+    other._ls = nullptr;
+}
+
+PublicIpGetterLua &PublicIpGetterLua::operator=(PublicIpGetterLua &&other) noexcept
+{
+    if (this != &other) 
+    {
+        lua_close(_ls);
+        _ls = other._ls;
+        other._ls = nullptr;
+    }
+    return *this;
+}
+
 PublicIpGetterLua::~PublicIpGetterLua()
 {
     SPDLOG_INFO("dtor");

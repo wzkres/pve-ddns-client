@@ -9,6 +9,11 @@ typedef struct lua_State lua_State;
 class PublicIpGetterLua : public IPublicIpGetter
 {
 public:
+    PublicIpGetterLua() = default;
+    PublicIpGetterLua(const PublicIpGetterLua & other) = delete;
+    PublicIpGetterLua & operator=(const PublicIpGetterLua & other) = delete;
+    PublicIpGetterLua(PublicIpGetterLua && other) noexcept;
+    PublicIpGetterLua & operator=(PublicIpGetterLua && other) noexcept;
     virtual ~PublicIpGetterLua();
 
     bool loadModule(const std::string & module_name);

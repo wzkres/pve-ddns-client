@@ -9,6 +9,11 @@ typedef struct lua_State lua_State;
 class DnsServiceLua : public IDnsService
 {
 public:
+    DnsServiceLua() = default;
+    DnsServiceLua(const DnsServiceLua & other) = delete;
+    DnsServiceLua & operator=(const DnsServiceLua & other) = delete;
+    DnsServiceLua(DnsServiceLua && other) noexcept;
+    DnsServiceLua & operator=(DnsServiceLua && other) noexcept;
     virtual ~DnsServiceLua();
 
     bool loadModule(const std::string & module_name);

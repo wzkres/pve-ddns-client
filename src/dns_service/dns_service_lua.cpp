@@ -13,6 +13,22 @@
 #include "../lua_utils.h"
 
 
+DnsServiceLua::DnsServiceLua(DnsServiceLua && other) noexcept : _ls(other._ls)
+{
+    other._ls = nullptr;
+}
+
+DnsServiceLua & DnsServiceLua::operator=(DnsServiceLua && other) noexcept
+{
+    if (this != &other) 
+    {
+        lua_close(_ls);
+        _ls = other._ls;
+        other._ls = nullptr;
+    }
+    return *this;
+}
+
 DnsServiceLua::~DnsServiceLua()
 {
     SPDLOG_INFO("dtor");
