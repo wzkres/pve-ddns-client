@@ -19,6 +19,7 @@
 #include "utils.h"
 #include "public_ip/public_ip_getter.h"
 #include "dns_service/dns_service.h"
+#include "notify_service/notify_service.h"
 #include "pve/pve_api_client.h"
 #include "pve/pve_pct_wrapper.h"
 
@@ -26,6 +27,8 @@
 static volatile bool g_running = true;
 // Public IP getter service instance
 static std::shared_ptr<IPublicIpGetter> g_ip_getter;
+// Notify service instance
+static std::shared_ptr<INotifyService> g_notify_service;
 // DNS service instances
 static std::shared_ptr<std::unordered_map<size_t, IDnsService *>> g_dns_services;
 
@@ -142,6 +145,42 @@ static bool init_public_ip_getter()
     // Initial retrieval of public IPv4 and IPv6 addresses;
     cfg._my_public_ipv4 = g_ip_getter->getIpv4();
     cfg._my_public_ipv6 = g_ip_getter->getIpv6();
+
+    return true;
+}
+
+static bool init_notify_service()
+{
+    if (nullptr != g_notify_service)
+    {
+        SPDLOG_WARN("g_notify_service is not nullptr!");
+        return false;
+    }
+
+    auto & cfg = Config::getInstance();
+    if (cfg._notify_service.empty())
+    {
+        SPDLOG_INFO("No notify service specified!");
+        return true;
+    }
+    auto * notify_service = NotifyServiceFactory::create(cfg._notify_service);
+    if (nullptr == notify_service)
+    {
+        SPDLOG_WARN("Failed to create notify service {}!", cfg._notify_service);
+        return false;
+    }
+    g_notify_service = std::shared_ptr<INotifyService>(notify_service, [](INotifyService * notify_service)
+    {
+        if (nullptr == notify_service)
+            return;
+        NotifyServiceFactory::destroy(notify_service);
+    });
+    if (!g_notify_service->setCredentials(cfg._notify_service_credentials))
+    {
+        SPDLOG_WARN("Failed to setCredentials to notify service {}!", cfg._public_ip_service);
+        g_notify_service.reset();
+        return false;
+    }
 
     return true;
 }
@@ -318,6 +357,18 @@ static bool update_dns_records_v4(const config_node & config_node, const std::st
             {
                 SPDLOG_INFO("IPv4 record of domain '{}' successfully updated from '{}' to '{}'.", 
                     domain, found->second.last_ip, ip);
+                if (g_notify_service != nullptr)
+                {
+                    if (!g_notify_service->notifyIpChange(false, domain, found->second.last_ip, ip))
+                    {
+                        SPDLOG_WARN("Failed to notifyIpChange using service {}!", g_notify_service->getServiceName());
+                    }
+                    else
+                    {
+                        SPDLOG_DEBUG("notifyIpChange using service {} successfully called.",
+                                     g_notify_service->getServiceName());
+                    }
+                }
                 found->second.last_ip = ip;
                 found->second.last_get_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()
@@ -357,6 +408,18 @@ static bool update_dns_records_v6(const config_node & config_node, const std::st
             {
                 SPDLOG_INFO("IPv6 record of domain '{}' successfully updated from '{}' to '{}'.", 
                     domain, found->second.last_ip, ip);
+                if (g_notify_service != nullptr)
+                {
+                    if (!g_notify_service->notifyIpChange(true, domain, found->second.last_ip, ip))
+                    {
+                        SPDLOG_WARN("Failed to notifyIpChange using service {}!", g_notify_service->getServiceName());
+                    }
+                    else
+                    {
+                        SPDLOG_DEBUG("notifyIpChange using service {} successfully called.",
+                                     g_notify_service->getServiceName());
+                    }
+                }                    
                 found->second.last_ip = ip;
                 found->second.last_get_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()
@@ -550,6 +613,12 @@ static bool initialize_services(std::shared_ptr<PveApiClient> & pve_api_client,
         return false;
     }
     SPDLOG_INFO("Public IP getter inited!");
+    if (!init_notify_service())
+    {
+        SPDLOG_WARN("Failed to init notify service!");
+        return false;
+    }
+    SPDLOG_INFO("Notify service inited!");
     if (!init_dns_services())
     {
         SPDLOG_WARN("Failed to init dns services!");

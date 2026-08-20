@@ -87,6 +87,8 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
             config._module_path_ip = mp["ip"].as<std::string>();
         if (mp["dns"])
             config._module_path_dns = mp["dns"].as<std::string>();
+        if (mp["notify"])
+            config._module_path_notify = mp["notify"].as<std::string>();
     }
     if (yaml_node["public-ip"])
     {
@@ -95,6 +97,14 @@ static void parse_general_config(const YAML::Node & yaml_node, Config & config)
             config._public_ip_service = pi["service"].as<std::string>();
         if (pi["credentials"])
             config._public_ip_credentials = pi["credentials"].as<std::string>();
+    }
+    if (yaml_node["notify"])
+    {
+        const auto & notify = yaml_node["notify"];
+        if (notify["service"])
+            config._notify_service = notify["service"].as<std::string>();
+        if (notify["credentials"])
+            config._notify_service_credentials = notify["credentials"].as<std::string>();
     }
 
     parse_pve_config(yaml_node, config);

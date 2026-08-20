@@ -73,10 +73,15 @@ public:
     // Module paths
     std::string _module_path_ip = "./ip_services";
     std::string _module_path_dns = "./dns_services";
+    std::string _module_path_notify = "./notify_services";
 
     // Public IP service related
     std::string _public_ip_service;
     std::string _public_ip_credentials;
+
+    // Notify service related
+    std::string _notify_service;
+    std::string _notify_service_credentials;
 
     // PVE API related stuff
     std::string _pve_api_host;

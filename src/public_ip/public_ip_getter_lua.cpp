@@ -12,12 +12,12 @@
 #include "../config.h"
 #include "../lua_utils.h"
 
-PublicIpGetterLua::PublicIpGetterLua(PublicIpGetterLua &&other) noexcept
+PublicIpGetterLua::PublicIpGetterLua(PublicIpGetterLua && other) noexcept
 {
     other._ls = nullptr;
 }
 
-PublicIpGetterLua &PublicIpGetterLua::operator=(PublicIpGetterLua &&other) noexcept
+PublicIpGetterLua & PublicIpGetterLua::operator=(PublicIpGetterLua && other) noexcept
 {
     if (this != &other) 
     {
